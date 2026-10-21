@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'server'
+  - 'extension'
+allowBuilds:
+  esbuild: true
+  mongodb-memory-server: true
