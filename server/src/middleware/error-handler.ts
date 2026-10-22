@@ -33,12 +33,14 @@ export function errorHandler(
 ): void {
   const requestId = (req.headers['x-request-id'] as string) || undefined;
 
-  if (err instanceof ZodError) {
+  const isZod = err instanceof ZodError || (typeof err === 'object' && err !== null && 'name' in err && (err as { name: string }).name === 'ZodError');
+  if (isZod) {
+    const issues = (err as ZodError).issues || [];
     res.status(400).json({
       error: {
         code: 'INVALID_REQUEST',
         message: 'Request validation failed',
-        details: err.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
+        details: issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
         requestId,
       },
     });
