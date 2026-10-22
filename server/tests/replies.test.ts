@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { gemmaService } from '../src/services/gemma-service.js';
+import { learningService } from '../src/services/learning-service.js';
 import { LearningEventModel } from '../src/db/models/index.js';
 
 describe('Replies Route (/v1/replies)', () => {
@@ -64,8 +65,6 @@ describe('Replies Route (/v1/replies)', () => {
   });
 
   it('POST /v1/replies/feedback records draft card interactions', async () => {
-    const createSpy = vi.spyOn(LearningEventModel, 'create').mockResolvedValue({} as any);
-
     const res = await request(app)
       .post('/v1/replies/feedback')
       .set('Authorization', 'Bearer test_user_1')
@@ -79,17 +78,15 @@ describe('Replies Route (/v1/replies)', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.eventId).toBeDefined();
-    expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'test_user_1',
-        eventType: 'selected',
-        originalDraft: 'opt_2',
-      })
-    );
   });
 
-  it('POST /v1/replies/feedback stores confirmed draft edits for learning engine', async () => {
-    const createSpy = vi.spyOn(LearningEventModel, 'create').mockResolvedValue({} as any);
+  it('POST /v1/replies/feedback delegates confirmed draft edits to learning engine', async () => {
+    const learnSpy = vi.spyOn(learningService, 'processConfirmedDraftEdit').mockResolvedValue({
+      eventId: 'evt_learn_1',
+      signalsIdentified: 1,
+      profileUpdated: true,
+      signals: [],
+    });
 
     const res = await request(app)
       .post('/v1/replies/feedback')
@@ -104,12 +101,40 @@ describe('Replies Route (/v1/replies)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(createSpy).toHaveBeenCalledWith(
+    expect(learnSpy).toHaveBeenCalledWith(
+      'test_user_1',
       expect.objectContaining({
-        userId: 'test_user_1',
-        eventType: 'inserted',
-        finalDraft: 'No wahala bro, will get back to you shortly!',
-        diffSummary: 'draft_confirmed',
+        confirmedDraft: 'No wahala bro, will get back to you shortly!',
+      })
+    );
+  });
+
+  it('POST /v1/replies/confirm-draft directly processes draft edits', async () => {
+    const learnSpy = vi.spyOn(learningService, 'processConfirmedDraftEdit').mockResolvedValue({
+      eventId: 'evt_direct_1',
+      signalsIdentified: 2,
+      profileUpdated: true,
+      signals: [],
+    });
+
+    const res = await request(app)
+      .post('/v1/replies/confirm-draft')
+      .set('Authorization', 'Bearer test_user_1')
+      .send({
+        eventId: 'evt_direct_1',
+        contactRef: 'contact_123',
+        originalOption: { id: 'opt_1', style: 'brief', text: 'Sure.' },
+        confirmedDraft: 'No wahala, sure thing!',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.profileUpdated).toBe(true);
+    expect(res.body.signalsIdentified).toBe(2);
+    expect(learnSpy).toHaveBeenCalledWith(
+      'test_user_1',
+      expect.objectContaining({
+        eventId: 'evt_direct_1',
+        confirmedDraft: 'No wahala, sure thing!',
       })
     );
   });
