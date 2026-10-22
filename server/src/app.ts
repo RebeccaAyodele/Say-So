@@ -6,6 +6,7 @@ import { healthRouter } from './routes/health.js';
 import { contactsRouter } from './routes/contacts.js';
 import { preferencesRouter } from './routes/preferences.js';
 import { inboxRouter } from './routes/inbox.js';
+import { repliesRouter } from './routes/replies.js';
 
 export function createApp(): Express {
   const app = express();
@@ -32,6 +33,7 @@ export function createApp(): Express {
   app.use('/v1/contacts', contactsRouter);
   app.use('/v1/preferences', preferencesRouter);
   app.use('/v1/inbox', inboxRouter);
+  app.use('/v1/replies', repliesRouter);
 
   // Standardized Error Handler
   app.use(errorHandler);

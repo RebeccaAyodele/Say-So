@@ -1,8 +1,10 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
 import { connectToDatabase } from './db/connection.js';
+import { initSentry } from './services/tracer.js';
 
 async function bootstrap() {
+  initSentry();
   const app = createApp();
 
   try {
