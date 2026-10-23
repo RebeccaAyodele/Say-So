@@ -15,9 +15,9 @@ const STYLE_COLORS: Record<string, string> = {
 };
 
 const STYLE_LABELS: Record<string, string> = {
-  brief: '⚡ Brief',
-  warm: '💛 Warm',
-  direct: '🎯 Direct',
+  brief: 'Brief',
+  warm: 'Warm',
+  direct: 'Direct',
 };
 
 export function ReplyCard({ option, index }: ReplyCardProps) {
@@ -110,7 +110,7 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
                     className="px-2 py-0.5 rounded text-[11px] font-semibold bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/40 transition-colors"
                     title="Insert this reply into WhatsApp"
                   >
-                    Send ↵
+                    Send
                   </button>
                 </div>
               </div>
@@ -139,7 +139,7 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
           className="ml-auto flex items-center gap-1.5 text-xs font-medium text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 px-3 py-1 rounded-full transition-all"
           aria-label="Insert reply into WhatsApp"
         >
-          {isMultiPoint ? 'Insert All ↵' : 'Insert ↵'}
+          {isMultiPoint ? 'Insert All' : 'Insert'}
         </button>
       </div>
     </div>

@@ -1,33 +1,15 @@
-/**
- * WhatsApp Web DOM Adapter — Content Script
- *
- * Observes the WhatsApp Web DOM to extract:
- *  1. Active contact name
- *  2. Recent chat messages (role + text)
- *  3. Un-replied conversation candidates
- *
- * Forwards data to the service worker via messaging.
- */
-
 import { sendToBackground } from '../services/messaging';
 import type { ExtensionMessage, MessageResponse } from '../services/messaging';
 import type { ChatMessage } from '@sayso/shared';
+import { startCandidateObserver, openChatByContactName } from './candidate-detector';
 
-// ─── Selectors (WhatsApp Web) ─────────────────────────────────────────
 const SEL = {
-  /** Header containing the active contact / group name */
   contactHeader: 'header span[data-testid="conversation-info-header-chat-title"], #main header span[title], div[role="main"] header span[title], header div[role="button"] span[title]',
-  /** Message containers */
   messageContainer: '#main div[role="row"], div[role="main"] div[role="row"], div[data-testid="msg-container"]',
-  /** Incoming message bubble */
   messageIn: 'div.message-in',
-  /** Outgoing message bubble */
   messageOut: 'div.message-out',
-  /** Text content inside a bubble */
   messageText: 'span.selectable-text',
-  /** Timestamp inside a bubble */
   messageTime: 'span[data-testid="msg-meta"]',
-  /** The chat input box where replies are typed */
   chatInput: 'div[data-testid="conversation-compose-box-input"], #main footer div[contenteditable="true"], div[role="textbox"][contenteditable="true"]',
 } as const;
 
@@ -42,8 +24,6 @@ function cleanContactName(raw: string): string {
     .trim();
 }
 
-// ─── Active Contact ──────────────────────────────────────────────────
-
 function getActiveContactName(): string | null {
   const el = document.querySelector(SEL.contactHeader);
   const raw = el?.getAttribute('title') || el?.textContent;
@@ -54,13 +34,10 @@ function contactRefFrom(name: string): string {
   return `wa:${cleanContactName(name).replace(/\s+/g, '_').toLowerCase()}`;
 }
 
-// ─── Message Extraction ──────────────────────────────────────────────
-
 function extractMessages(maxMessages = 25): ChatMessage[] {
   const rows = document.querySelectorAll(SEL.messageContainer);
   const messages: ChatMessage[] = [];
 
-  // Only take the last N rows to keep context compact
   const start = Math.max(0, rows.length - maxMessages);
   for (let i = start; i < rows.length; i++) {
     const row = rows[i];
@@ -80,24 +57,16 @@ function extractMessages(maxMessages = 25): ChatMessage[] {
   return messages;
 }
 
-// ─── Reply Insertion ─────────────────────────────────────────────────
-
 function insertReplyText(text: string): boolean {
   const input = document.querySelector(SEL.chatInput) as HTMLElement | null;
   if (!input) return false;
 
   input.focus();
-
-  // Use execCommand for contentEditable compat with WhatsApp's React tree
   document.execCommand('selectAll', false);
   document.execCommand('insertText', false, text);
-
-  // Trigger input event so WhatsApp's React picks up the change
   input.dispatchEvent(new InputEvent('input', { bubbles: true }));
   return true;
 }
-
-// ─── Observe & Forward ───────────────────────────────────────────────
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastForwardedRef = '';
@@ -112,15 +81,12 @@ function forwardContext(): void {
 
   const contactRef = contactRefFrom(contactName);
 
-  // Avoid spamming if context hasn't changed
   if (contactRef === lastForwardedRef && messages.length === lastMessageCount) {
     return;
   }
 
   lastForwardedRef = contactRef;
   lastMessageCount = messages.length;
-
-  console.log(`[SaySo] Forwarding context for "${contactName}" (${messages.length} messages)`);
 
   sendToBackground({
     type: 'CONVERSATION_CONTEXT',
@@ -137,27 +103,19 @@ function debouncedForward(): void {
   debounceTimer = setTimeout(forwardContext, 400);
 }
 
-// ─── DOM Observer ────────────────────────────────────────────────────
-
 function startObserving(): void {
-  console.log('[SaySo] Starting active chat observer on document body');
   const observer = new MutationObserver(() => {
     debouncedForward();
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
   debouncedForward();
-
-  // Periodic fallback check every 3s in case user clicks a chat without DOM mutations in body root
   setInterval(debouncedForward, 3000);
 }
-
-import { startCandidateObserver, openChatByContactName } from './candidate-detector';
 
 startObserving();
 startCandidateObserver();
 
-// ─── Incoming Message Handler ────────────────────────────────────────
 chrome.runtime.onMessage.addListener(
   (
     message: ExtensionMessage,
@@ -177,5 +135,3 @@ chrome.runtime.onMessage.addListener(
     }
   },
 );
-
-console.log('[SaySo] WhatsApp adapter loaded ✓');

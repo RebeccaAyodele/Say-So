@@ -94,7 +94,7 @@ export function HomeView() {
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              <span>⚡ All-in-One</span>
+              <span>All-in-One</span>
             </button>
 
             <button
@@ -105,7 +105,7 @@ export function HomeView() {
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              <span>📝 Point-by-Point</span>
+              <span>Point-by-Point</span>
             </button>
           </div>
         </div>

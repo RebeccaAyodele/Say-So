@@ -3,7 +3,6 @@ import type { ChatMessage, ReplyOption, GenerateRepliesResponse, ReplyCandidate 
 import { sendToBackground } from '../../services/messaging';
 import { formatFriendlyError } from '../../services/api-client';
 
-// ─── State Shape ─────────────────────────────────────────────────────
 export type AppView = 'home' | 'replies' | 'editor' | 'settings';
 
 export interface AppState {
@@ -38,7 +37,6 @@ const initialState: AppState = {
   error: null,
 };
 
-// ─── Actions ─────────────────────────────────────────────────────────
 type Action =
   | { type: 'SET_CONTEXT'; payload: { contactRef: string; contactName: string; messages: ChatMessage[] } }
   | { type: 'SET_CANDIDATES'; payload: ReplyCandidate[] }
@@ -128,7 +126,6 @@ export function useApp(): AppContextValue {
   return ctx;
 }
 
-// ─── Provider ────────────────────────────────────────────────────────
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -199,7 +196,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => chrome.runtime.onMessage.removeListener(handler);
   }, []);
 
-  // ─── Helpers ─────────────────────────────────────────────────────
   async function executeGenerate(contactRef: string, contactName: string): Promise<void> {
     dispatch({ type: 'GENERATE_START' });
 

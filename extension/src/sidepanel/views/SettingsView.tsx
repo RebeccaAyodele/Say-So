@@ -132,7 +132,7 @@ export function SettingsView() {
             {saving ? (
               <Loader2 size={15} className="animate-spin" />
             ) : saved ? (
-              '✓ Saved'
+              'Saved'
             ) : (
               <>
                 <Save size={15} />
