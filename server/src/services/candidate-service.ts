@@ -29,6 +29,7 @@ export class CandidateService {
           lastMessageDirection: item.lastMessageDirection,
           lastMessageTimestamp: item.lastMessageTimestamp,
           unreadCount: item.unreadCount || 0,
+          isGroup: item.isGroup ?? false,
         });
         syncedCount++;
       } else {
@@ -38,6 +39,7 @@ export class CandidateService {
         existing.lastMessageDirection = item.lastMessageDirection;
         existing.lastMessageTimestamp = item.lastMessageTimestamp;
         existing.unreadCount = item.unreadCount ?? existing.unreadCount;
+        existing.isGroup = item.isGroup ?? existing.isGroup;
 
         if (revisionChanged) {
           existing.revision = item.revision;

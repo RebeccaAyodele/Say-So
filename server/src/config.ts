@@ -1,7 +1,14 @@
 import dotenv from 'dotenv';
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { z } from 'zod';
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
 dotenv.config();
+dotenv.config({ path: resolve(process.cwd(), '.env') });
+dotenv.config({ path: resolve(process.cwd(), '../.env') });
+dotenv.config({ path: resolve(__dirname, '../../.env') });
 
 const ConfigSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -13,7 +20,7 @@ const ConfigSchema = z.object({
   MONGODB_URI: z.string().default('mongodb://localhost:27017/sayso'),
   MONGODB_DB_NAME: z.string().default('sayso'),
   OPENROUTER_API_KEY: z.string().optional().default(''),
-  GEMMA_MODEL_ID: z.string().default('google/gemma-2-9b-it'),
+  GEMMA_MODEL_ID: z.string().default('google/gemma-3-12b-it'),
   SENTRY_DSN: z.string().optional().default(''),
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
 });

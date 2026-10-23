@@ -10,6 +10,7 @@ export const CandidateSyncItemSchema = z.object({
   lastMessageDirection: MessageDirectionSchema,
   lastMessageTimestamp: z.string().optional(),
   unreadCount: z.number().int().min(0).optional(),
+  isGroup: z.boolean().optional(),
 });
 
 export const ReplyCandidateSchema = z.object({
@@ -21,6 +22,7 @@ export const ReplyCandidateSchema = z.object({
   lastMessageDirection: MessageDirectionSchema,
   lastMessageTimestamp: z.string().optional(),
   unreadCount: z.number().int().min(0).optional(),
+  isGroup: z.boolean().optional(),
   dismissedAt: z.string().optional(),
   updatedAt: z.string(),
 });

@@ -40,7 +40,7 @@ describe('Replies Route (/v1/replies)', () => {
       ],
       model: {
         provider: 'openrouter',
-        modelId: 'google/gemma-2-9b-it',
+        modelId: 'google/gemma-3-12b-it',
       },
     });
 

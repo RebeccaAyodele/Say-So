@@ -52,17 +52,30 @@ export class GemmaService {
       }
     );
 
-    // 2. Fetch Layer 1 (User Style) & Layer 2 (Contact Profile) Context
-    const layeredStyle = await AgentTracer.traceSpan(
-      'fetch_profile',
-      'agent.db.read',
-      {
-        hasContactRef: Boolean(req.contactRef),
-      },
-      async () => {
-        return await profileService.getLayeredStyleContext(userId, req.contactRef);
-      }
-    );
+    // 2. Fetch Layer 1 (User Style) & Layer 2 (Contact Profile) Context with Graceful Fallback
+    let layeredStyle: Awaited<ReturnType<typeof profileService.getLayeredStyleContext>> = {
+      generalStyleSummary: [],
+      contactFormality: 'casual',
+      contactGreetings: [],
+      contactCommonPhrases: [],
+      contactEmojiPreference: 'minimal',
+      relationship: undefined,
+    };
+
+    try {
+      layeredStyle = await AgentTracer.traceSpan(
+        'fetch_profile',
+        'agent.db.read',
+        {
+          hasContactRef: Boolean(req.contactRef),
+        },
+        async () => {
+          return await profileService.getLayeredStyleContext(userId, req.contactRef);
+        }
+      );
+    } catch (err) {
+      console.warn('[GemmaService] Profile DB read timed out or failed; falling back to dynamic context learning:', err);
+    }
 
     // 3. Assemble Structured Prompt Distinguishing Facts vs. Inferred Preferences
     const { systemPrompt, userPrompt } = await AgentTracer.traceSpan(
@@ -119,42 +132,109 @@ export class GemmaService {
       relationship?: string;
     }
   ): { systemPrompt: string; userPrompt: string } {
+    const contactName = req.context.activeContactName || 'The Contact';
+
     const systemPrompt = [
-      'You are SaySo, a privacy-first AI personal reply assistant operating on WhatsApp Web.',
-      'Your task is to craft EXACTLY THREE distinct, authentic reply options to the latest incoming message.',
+      'You are SaySo, an elite personal AI texting twin on WhatsApp Web.',
+      `You are ghost-writing on behalf of "User (Me)" replying to "${contactName}".`,
+      'Your task is to craft EXACTLY THREE authentic reply options matching the user\'s real voice, tone, and emoji habits with this person.',
+      '',
       'CRITICAL GUARDRAILS:',
-      '1. NEVER use generic templates or placeholders like [Name], [Date], or [Time].',
-      '2. Do NOT repeat or echo the other person’s question verbatim.',
-      '3. Option 1 MUST be "brief": concise, low friction, and directly to the point (1-8 words).',
-      '4. Option 2 MUST be "warm": friendly, conversational, and natural with appropriate warmth or greeting.',
-      '5. Option 3 MUST be "direct": clear, definitive, and proactive.',
-      '6. You must output ONLY a valid JSON object matching the requested schema. No markdown formatting, backticks, or extra commentary.',
+      '1. NEVER sound like a corporate AI chatbot or robotic assistant (no "I hope this finds you well", "Certainly!", etc.).',
+      '2. NEVER use generic templates or placeholders like [Name], [Date], [Time].',
+      '3. Mirror the user\'s texting habits (casing, punctuation, slang, emojis).',
+      '4. Option 1 MUST be "brief": fast, punchy, concise (1-8 words, with 0-1 natural emoji like 👍 or 🙌).',
+      '5. Option 2 MUST be "warm": friendly, conversational, and MUST include 1-2 expressive emojis (e.g. 😊, 😂, 🙏, 💛, ✨, 🔥).',
+      '6. Option 3 MUST be "direct": clear, definitive, proactive, with 0-1 confirming emoji (e.g. 👍, 🎯).',
+      '7. Output ONLY a valid JSON object matching the requested schema. No markdown backticks or commentary.',
     ].join('\n');
 
-    // Bound context messages to 20 most recent
-    const boundedMessages = req.context.messages.slice(-20);
+    // 1. Full context analysis (up to 20 messages) to understand User's voice with this person
+    const allContextMessages = req.context.messages || [];
+    const myPastMessages = allContextMessages.filter((m) => m.role === 'me');
+    const myCombinedText = myPastMessages.map((m) => m.text).join(' ');
 
+    // Extract User's emoji habits with this person
+    const myEmojis = myCombinedText.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu) || [];
+    const uniqueMyEmojis = [...new Set(myEmojis)];
+
+    // Check if user usually writes in lowercase (casual texting)
+    const lowerCount = myPastMessages.filter((m) => /^[a-z]/.test(m.text.trim())).length;
+    const isUserPrimarilyLowercase = myPastMessages.length > 0 && (lowerCount / myPastMessages.length) >= 0.5;
+
+    // Check if user omits trailing periods (typical in mobile chat)
+    const trailingPeriodCount = myPastMessages.filter((m) => /\.\s*$/.test(m.text.trim())).length;
+    const isUserOmittingPeriods = myPastMessages.length > 0 && (trailingPeriodCount / myPastMessages.length) < 0.3;
+
+    // 2. Analyze the Contact's incoming messages and tone
+    const incomingMessages = allContextMessages.filter((m) => m.role === 'them');
+    const recentIncoming = allContextMessages.slice(-6).filter((m) => m.role === 'them');
+    const incomingText = recentIncoming.map((m) => m.text).join(' \n ');
+    const incomingQuestions = recentIncoming.filter((m) => m.text.includes('?'));
+
+    const contactEmojis = incomingText.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu) || [];
+    const contactIsEnthusiastic = /!{2,}|\b(omg|yay|haha|lmao|lol|wow)\b/i.test(incomingText);
+
+    // Dynamic Tone & Emoji guidance - mobile chat without emojis feels sterile
+    let voiceGuidance = '';
+    if (uniqueMyEmojis.length > 0) {
+      voiceGuidance += `User's signature emojis with ${contactName}: ${uniqueMyEmojis.slice(0, 5).join(' ')}. Prioritize naturally weaving these exact emojis into the replies!\n`;
+    } else if (contactEmojis.length > 0) {
+      voiceGuidance += `Contact uses emojis (${[...new Set(contactEmojis)].slice(0, 4).join(' ')}). Mirror their friendly vibe with fitting emojis.\n`;
+    } else {
+      voiceGuidance += `Use warm, natural emojis (e.g. 😊, 👍, 😂, 🙏, ✨, 🔥) in Option 2 (Warm) and Option 3 (Direct) so the replies feel human and engaging.\n`;
+    }
+
+    if (isUserPrimarilyLowercase) {
+      voiceGuidance += `User tends to text casually in lowercase. Match this relaxed style.\n`;
+    }
+    if (isUserOmittingPeriods) {
+      voiceGuidance += `User rarely uses ending periods in casual chat. Avoid rigid trailing periods.\n`;
+    }
+
+    // Multi-message detection
+    const isPointByPoint = req.replyMode === 'point_by_point';
+    const hasMultipleIncoming = recentIncoming.length >= 2 || incomingQuestions.length >= 2;
+
+    let multiMessageGuidance = '';
+    if (isPointByPoint || (hasMultipleIncoming && req.replyMode !== 'all_at_once')) {
+      multiMessageGuidance = [
+        'POINT-BY-POINT MODE (INDIVIDUAL REPLIES REQUIRED):',
+        `The contact sent ${recentIncoming.length} separate messages/questions:`,
+        ...recentIncoming.map((m, idx) => `  Message ${idx + 1}: "${m.text}"`),
+        '',
+        'CRITICAL POINT-BY-POINT INSTRUCTION:',
+        'The user wants to reply to EACH individual message separately!',
+        'In EVERY option, you MUST structure the reply as distinct numbered points corresponding directly to each message:',
+        ...recentIncoming.map((m, idx) => `${idx + 1}. [Specific answer/reaction to Message ${idx + 1}]`),
+        'Do NOT combine them into one general paragraph. Each incoming message must have its own separate, numbered line so the user can address each point directly!',
+      ].join('\n');
+    } else {
+      multiMessageGuidance = [
+        'ALL-AT-ONCE MODE:',
+        'Synthesize all pending questions and comments into one smooth, natural conversational reply answering everything in a single message flow.',
+      ].join('\n');
+    }
+
+    // 3. Format the recent messages for prompt (bound to last 20 messages)
+    const boundedMessages = allContextMessages.slice(-20);
     const formattedMessages = boundedMessages
       .map((m) => {
-        const sender = m.role === 'me' ? 'User (Me)' : (m.senderName || req.context.activeContactName || 'Them');
+        const sender = m.role === 'me' ? 'User (Me)' : (m.senderName || contactName);
         return `[${sender}]: ${m.text}`;
       })
       .join('\n');
 
     const styleInstructions = [
-      'PERSONALIZATION CONTEXT (Match this voice):',
+      'AUTHENTIC VOICE ALIGNMENT (CRITICAL PRIORITY):',
       `- Formality Level: ${layeredStyle.contactFormality}`,
       layeredStyle.relationship ? `- Relationship: ${layeredStyle.relationship}` : '',
-      layeredStyle.contactGreetings.length > 0
-        ? `- Typical Greetings: ${layeredStyle.contactGreetings.join(', ')}`
-        : '',
-      layeredStyle.contactCommonPhrases.length > 0
-        ? `- Natural Phrases: ${layeredStyle.contactCommonPhrases.join(', ')}`
-        : '',
-      `- Emoji Tendency: ${layeredStyle.contactEmojiPreference}`,
-      layeredStyle.generalStyleSummary.length > 0
-        ? `- General Habits: ${layeredStyle.generalStyleSummary.join('; ')}`
-        : '',
+      contactIsEnthusiastic ? `- Contact Energy: High / Enthusiastic. Mirror appropriate energy!` : '',
+      `- Voice & Habit Guidelines:\n${voiceGuidance}`,
+      layeredStyle.contactGreetings.length > 0 ? `- Typical Greetings: ${layeredStyle.contactGreetings.join(', ')}` : '',
+      layeredStyle.contactCommonPhrases.length > 0 ? `- Natural Phrases: ${layeredStyle.contactCommonPhrases.join(', ')}` : '',
+      '',
+      multiMessageGuidance,
     ]
       .filter(Boolean)
       .join('\n');
@@ -211,7 +291,7 @@ export class GemmaService {
             { role: 'user', content: userPrompt },
           ],
           temperature: 0.7,
-          max_tokens: 500,
+          max_tokens: 900,
           response_format: { type: 'json_object' },
         }),
         signal: controller.signal,
@@ -256,24 +336,87 @@ export class GemmaService {
       cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     }
 
-    let parsed: unknown;
+    let parsed: any;
     try {
       parsed = JSON.parse(cleanJson);
     } catch {
       throw new AppError('INVALID_MODEL_OUTPUT', 'Model response was not valid JSON', 502);
     }
 
-    const obj = parsed as { options?: ReplyOption[] };
-    if (!obj || !Array.isArray(obj.options) || obj.options.length < 3) {
+    // Extract options from various potential LLM keys (options, replies, responses, or array)
+    let rawOptions: any[] = [];
+    if (Array.isArray(parsed)) {
+      rawOptions = parsed;
+    } else if (parsed && Array.isArray(parsed.options)) {
+      rawOptions = parsed.options;
+    } else if (parsed && Array.isArray(parsed.replies)) {
+      rawOptions = parsed.replies;
+    } else if (parsed && Array.isArray(parsed.responses)) {
+      rawOptions = parsed.responses;
+    } else if (parsed && typeof parsed === 'object') {
+      rawOptions = Object.values(parsed).filter((v) => typeof v === 'object' && v !== null);
+    }
+
+    if (!rawOptions || rawOptions.length < 3) {
       throw new AppError('INVALID_MODEL_OUTPUT', 'Model did not produce the required 3 options', 502);
     }
 
-    // Ensure options array has exact 3 items
-    const [opt1, opt2, opt3] = obj.options.slice(0, 3);
+    // Helper to safely extract non-empty string from option payload
+    function extractOptionText(opt: any, fallbackText: string): string {
+      let raw = '';
+      if (!opt) return fallbackText;
+      if (typeof opt.text === 'string' && opt.text.trim().length > 0) raw = opt.text.trim();
+      else if (Array.isArray(opt.text)) raw = opt.text.filter(Boolean).join('\n').trim();
+      else if (Array.isArray(opt.points)) raw = opt.points.filter(Boolean).join('\n').trim();
+      else if (Array.isArray(opt.replies)) raw = opt.replies.filter(Boolean).join('\n').trim();
+      else if (Array.isArray(opt.messages)) raw = opt.messages.filter(Boolean).join('\n').trim();
+      else if (typeof opt.reply === 'string' && opt.reply.trim().length > 0) raw = opt.reply.trim();
+      else if (typeof opt.message === 'string' && opt.message.trim().length > 0) raw = opt.message.trim();
+      else if (typeof opt.content === 'string' && opt.content.trim().length > 0) raw = opt.content.trim();
+      else if (typeof opt.response === 'string' && opt.response.trim().length > 0) raw = opt.response.trim();
+      else if (typeof opt === 'object' && opt !== null) {
+        const strValues = Object.values(opt).filter((v) => typeof v === 'string' && (v as string).trim().length > 0);
+        if (strValues.length > 0) raw = strValues.join('\n').trim();
+      }
+
+      if (!raw) return fallbackText;
+
+      // Clean any accidental model prefix e.g. "option_1.brief:" or "option_1: "
+      let clean = raw.replace(/^option_\d+[\s._:]*(?:brief|warm|direct)?[\s._:]*/i, '').trim();
+      if (!clean) return fallbackText;
+
+      // Ensure points have line breaks between them if Gemma put them on one line (e.g. "1. Yep! 2. Yep! 3. Call me")
+      clean = clean.replace(/(\S)\s+(\d+[\.\)]\s+)/g, '$1\n$2');
+
+      return clean;
+    }
+
+    const fallbacks = [
+      'Got it, on it now 👍',
+      'Hey! Thanks for reaching out 😊 Will check and update you soon!',
+      'Understood. I will handle this shortly.',
+    ];
+
+    const opt1 = rawOptions[0] || {};
+    const opt2 = rawOptions[1] || {};
+    const opt3 = rawOptions[2] || {};
+
     const options: [ReplyOption, ReplyOption, ReplyOption] = [
-      { id: opt1.id || 'option_1', style: opt1.style || 'brief', text: String(opt1.text || '').trim() },
-      { id: opt2.id || 'option_2', style: opt2.style || 'warm', text: String(opt2.text || '').trim() },
-      { id: opt3.id || 'option_3', style: opt3.style || 'direct', text: String(opt3.text || '').trim() },
+      {
+        id: opt1.id || 'option_1',
+        style: opt1.style || 'brief',
+        text: extractOptionText(opt1, fallbacks[0]),
+      },
+      {
+        id: opt2.id || 'option_2',
+        style: opt2.style || 'warm',
+        text: extractOptionText(opt2, fallbacks[1]),
+      },
+      {
+        id: opt3.id || 'option_3',
+        style: opt3.style || 'direct',
+        text: extractOptionText(opt3, fallbacks[2]),
+      },
     ];
 
     const result = {

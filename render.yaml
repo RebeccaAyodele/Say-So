@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: sayso-api
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @sayso/shared build && pnpm --filter @sayso/server build
+    startCommand: pnpm --filter @sayso/server start
+    healthCheckPath: /v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: sayso
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMMA_MODEL_ID
+        value: google/gemma-3-12b-it
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.2"
+      - key: ALLOWED_ORIGINS
+        value: "*"

@@ -18,6 +18,7 @@ export const GenerateRepliesRequestSchema = z.object({
   instructions: z.string().max(500).optional(),
   tone: z.string().max(50).optional(),
   length: z.enum(['short', 'medium', 'detailed']).optional(),
+  replyMode: z.enum(['all_at_once', 'point_by_point']).optional(),
 });
 
 export const ReplyOptionSchema = z.object({

@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "SaySo — AI Reply Assistant for WhatsApp",
+  "version": "0.1.0",
+  "description": "Privacy-first AI personal reply assistant and unreplied message manager for WhatsApp Web",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://localhost:3000/*",
+    "https://*.render.com/*"
+  ],
+  "action": {
+    "default_title": "SaySo Assistant",
+    "default_popup": "popup.html"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

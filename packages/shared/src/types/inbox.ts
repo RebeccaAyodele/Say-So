@@ -9,6 +9,7 @@ export interface ReplyCandidate {
   lastMessageDirection: 'incoming' | 'outgoing';
   lastMessageTimestamp?: string;
   unreadCount?: number;
+  isGroup?: boolean;
   dismissedAt?: string;
   updatedAt: string;
 }
@@ -20,6 +21,7 @@ export interface CandidateSyncItem {
   lastMessageDirection: 'incoming' | 'outgoing';
   lastMessageTimestamp?: string;
   unreadCount?: number;
+  isGroup?: boolean;
 }
 
 export interface SyncInboxRequest {

@@ -62,10 +62,25 @@ export function errorHandler(
   const message = err instanceof Error ? err.message : 'An unexpected error occurred';
   console.error('[Error]', err);
 
+  let clientMessage = message;
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('buffering timed out') ||
+    lower.includes('enotfound') ||
+    lower.includes('mongodb') ||
+    lower.includes('querysrv')
+  ) {
+    clientMessage = 'Database is momentarily synchronizing. Please tap "Generate Smart Replies" again.';
+  } else if (lower.includes('econnrefused')) {
+    clientMessage = 'Unable to reach the server. Please ensure the SaySo server is running.';
+  } else if (lower.includes('timeout') || lower.includes('abort')) {
+    clientMessage = 'Reply generation took longer than expected. Please try again.';
+  }
+
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'production' ? 'Internal server error' : message,
+      message: clientMessage,
       requestId,
     },
   });

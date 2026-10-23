@@ -18,6 +18,7 @@ export interface GenerateRepliesRequest {
   instructions?: string;
   tone?: string;
   length?: 'short' | 'medium' | 'detailed';
+  replyMode?: 'all_at_once' | 'point_by_point';
 }
 
 export interface ReplyOption {
