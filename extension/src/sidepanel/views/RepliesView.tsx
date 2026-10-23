@@ -18,14 +18,14 @@ export function RepliesView() {
           <ArrowLeft size={14} />
           Back
         </button>
-        <span className="text-xs text-gray-500 font-medium">
-          {state.replyOptions.length} options
+        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+          {state.isGroup ? 'Group Summary' : `${state.replyOptions.length} Options`}
         </span>
         <button
           onClick={generateReplies}
           disabled={state.isLoading}
           className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 disabled:opacity-40 transition-colors"
-          aria-label="Regenerate replies"
+          aria-label={state.isGroup ? 'Regenerate summary' : 'Regenerate replies'}
         >
           <RefreshCw size={13} className={state.isLoading ? 'animate-spin' : ''} />
           Refresh
@@ -43,8 +43,10 @@ export function RepliesView() {
       )}
 
       {/* Tip */}
-      <p className="text-center text-[10px] text-gray-600">
-        Click a card to customise before sending • edits teach SaySo your style
+      <p className="text-center text-[10px] text-gray-500">
+        {state.isGroup
+          ? 'Executive summary of unread messages in this group'
+          : 'Click a card to customise before sending • edits teach SaySo your style'}
       </p>
     </div>
   );

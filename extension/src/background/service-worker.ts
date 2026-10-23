@@ -21,6 +21,8 @@ let latestContext: {
   contactRef: string;
   contactName: string;
   messages: ChatMessage[];
+  isGroup?: boolean;
+  unreadCount?: number;
 } | null = null;
 
 /** Cached list of active candidates */
@@ -209,14 +211,20 @@ onMessage(
           return;
         }
 
-        // Async reply generation
+        const isGroup = message.payload.isGroup ?? latestContext.isGroup;
+        const unreadCount = message.payload.unreadCount ?? latestContext.unreadCount;
+
         api
           .generateReplies({
             contactRef: message.payload.contactRef,
             replyMode: message.payload.replyMode ?? 'all_at_once',
+            isGroup,
+            unreadCount,
             context: {
               messages: latestContext.messages,
               activeContactName: message.payload.contactName,
+              isGroup,
+              unreadCount,
             },
           })
           .then((result) => sendResponse({ success: true, data: result }))
@@ -225,7 +233,7 @@ onMessage(
             sendResponse({ success: false, error: friendly });
           });
 
-        return true; // keep channel open for async sendResponse
+        return true;
       }
 
       // Side panel → service worker → content script: insert reply text

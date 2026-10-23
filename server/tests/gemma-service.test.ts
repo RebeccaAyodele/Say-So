@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { gemmaService } from '../src/services/gemma-service.js';
 import { profileService } from '../src/services/profile-service.js';
+import { config } from '../src/config.js';
 import type { GenerateRepliesRequest } from '@sayso/shared';
 
 describe('GemmaService Unit Tests', () => {
@@ -118,10 +119,17 @@ describe('GemmaService Unit Tests', () => {
       contactEmojiPreference: 'minimal',
     });
 
-    const result = await gemmaService.generateReplies('user_123', sampleRequest);
+    const origKey = config.OPENROUTER_API_KEY;
+    (config as Record<string, unknown>).OPENROUTER_API_KEY = '';
 
-    expect(result.options).toHaveLength(3);
-    expect(result.options.map((o) => o.style)).toEqual(['brief', 'warm', 'direct']);
-    expect(result.model.modelId).toBeDefined();
+    try {
+      const result = await gemmaService.generateReplies('user_123', sampleRequest);
+
+      expect(result.options).toHaveLength(3);
+      expect(result.options.map((o) => o.style)).toEqual(['brief', 'warm', 'direct']);
+      expect(result.model.modelId).toBeDefined();
+    } finally {
+      (config as Record<string, unknown>).OPENROUTER_API_KEY = origKey;
+    }
   });
 });

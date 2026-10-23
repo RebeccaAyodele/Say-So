@@ -10,6 +10,8 @@ export const ChatMessageSchema = z.object({
 export const ConversationContextSchema = z.object({
   messages: z.array(ChatMessageSchema).min(1).max(50),
   activeContactName: z.string().max(100).optional(),
+  isGroup: z.boolean().optional(),
+  unreadCount: z.number().optional(),
 });
 
 export const GenerateRepliesRequestSchema = z.object({
@@ -19,6 +21,8 @@ export const GenerateRepliesRequestSchema = z.object({
   tone: z.string().max(50).optional(),
   length: z.enum(['short', 'medium', 'detailed']).optional(),
   replyMode: z.enum(['all_at_once', 'point_by_point']).optional(),
+  isGroup: z.boolean().optional(),
+  unreadCount: z.number().optional(),
 });
 
 export const ReplyOptionSchema = z.object({

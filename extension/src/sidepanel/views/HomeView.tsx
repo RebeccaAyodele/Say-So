@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { PrivacyNotice } from '../components/PrivacyNotice';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { CandidateList } from '../components/CandidateList';
-import { Zap, MessageSquarePlus, AlertCircle } from 'lucide-react';
+import { Zap, MessageSquarePlus, AlertCircle, Users, FileText } from 'lucide-react';
 
 export function HomeView() {
   const {
@@ -24,17 +24,29 @@ export function HomeView() {
     <div className="flex flex-col gap-4">
       {/* Hero */}
       <div className="text-center py-5">
-        <div className="w-14 h-14 mx-auto mb-3.5 rounded-2xl bg-gradient-to-br from-brand-400/20 to-brand-600/20 border border-brand-500/20 flex items-center justify-center">
-          <MessageSquarePlus size={26} className="text-brand-400" />
+        <div className={`w-14 h-14 mx-auto mb-3.5 rounded-2xl flex items-center justify-center border ${
+          state.isGroup
+            ? 'bg-gradient-to-br from-purple-500/20 to-purple-700/20 border-purple-500/30 text-purple-400'
+            : 'bg-gradient-to-br from-brand-400/20 to-brand-600/20 border-brand-500/20 text-brand-400'
+        }`}>
+          {state.isGroup ? <Users size={26} /> : <MessageSquarePlus size={26} />}
         </div>
         <h1 className="text-base font-bold text-white mb-1">
-          {hasContext ? `Reply to ${state.contactName}` : 'Select a Chat'}
-        </h1>
-        <p className="text-xs text-gray-400 max-w-[240px] mx-auto leading-relaxed">
           {hasContext
-            ? `${state.messages.length} messages loaded • ${
-                hasMultiplePoints ? `${recentThemMessages.length} questions/points to reply to` : 'ready to generate personalized replies'
-              }`
+            ? state.isGroup
+              ? `Catch up on ${state.contactName}`
+              : `Reply to ${state.contactName}`
+            : 'Select a Chat'}
+        </h1>
+        <p className="text-xs text-gray-400 max-w-[250px] mx-auto leading-relaxed">
+          {hasContext
+            ? state.isGroup
+              ? state.unreadCount > 0
+                ? `${state.unreadCount} unread message${state.unreadCount > 1 ? 's' : ''} • ready to summarize`
+                : `${state.messages.length} messages loaded • ready to summarize`
+              : `${state.messages.length} messages loaded • ${
+                  hasMultiplePoints ? `${recentThemMessages.length} points to reply to` : 'ready to generate personalized replies'
+                }`
             : 'Open a chat in WhatsApp Web or pick an unreplied conversation below'}
         </p>
       </div>
@@ -71,8 +83,8 @@ export function HomeView() {
         </div>
       )}
 
-      {/* Reply Mode Selector (Combined vs Point-by-point) */}
-      {hasContext && (
+      {/* Reply Mode Selector (Combined vs Point-by-point, Direct chats only) */}
+      {!state.isGroup && hasContext && (
         <div className="glass-card rounded-xl p-2.5 border border-surface-border flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs px-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
@@ -111,18 +123,22 @@ export function HomeView() {
         </div>
       )}
 
-      {/* Generate CTA */}
+      {/* Generate / Summarize CTA */}
       {hasContext && (
         <button
           onClick={generateReplies}
           disabled={state.isLoading}
-          className="relative w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white text-sm font-bold shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none transition-all overflow-hidden group"
+          className={`relative w-full py-3.5 rounded-xl text-white text-sm font-bold shadow-lg hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none transition-all overflow-hidden group ${
+            state.isGroup
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-purple-500/25 hover:shadow-purple-500/40'
+              : 'bg-gradient-to-r from-brand-500 to-brand-600 shadow-brand-500/25 hover:shadow-brand-500/40'
+          }`}
         >
           {/* Shimmer overlay */}
           <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           <span className="relative flex items-center justify-center gap-2">
-            <Zap size={16} />
-            Generate Smart Replies
+            {state.isGroup ? <FileText size={16} /> : <Zap size={16} />}
+            {state.isGroup ? 'Summarize Unread Messages' : 'Generate Smart Replies'}
           </span>
         </button>
       )}

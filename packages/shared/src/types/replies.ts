@@ -10,6 +10,8 @@ export interface ChatMessage {
 export interface ConversationContext {
   messages: ChatMessage[];
   activeContactName?: string;
+  isGroup?: boolean;
+  unreadCount?: number;
 }
 
 export interface GenerateRepliesRequest {
@@ -19,6 +21,8 @@ export interface GenerateRepliesRequest {
   tone?: string;
   length?: 'short' | 'medium' | 'detailed';
   replyMode?: 'all_at_once' | 'point_by_point';
+  isGroup?: boolean;
+  unreadCount?: number;
 }
 
 export interface ReplyOption {

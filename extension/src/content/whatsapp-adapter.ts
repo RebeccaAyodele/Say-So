@@ -1,7 +1,7 @@
 import { sendToBackground } from '../services/messaging';
 import type { ExtensionMessage, MessageResponse } from '../services/messaging';
 import type { ChatMessage } from '@sayso/shared';
-import { startCandidateObserver, openChatByContactName } from './candidate-detector';
+import { startCandidateObserver, openChatByContactName, getCandidateByRef } from './candidate-detector';
 
 const SEL = {
   contactHeader: 'header span[data-testid="conversation-info-header-chat-title"], #main header span[title], div[role="main"] header span[title], header div[role="button"] span[title]',
@@ -34,27 +34,113 @@ function contactRefFrom(name: string): string {
   return `wa:${cleanContactName(name).replace(/\s+/g, '_').toLowerCase()}`;
 }
 
-function extractMessages(maxMessages = 25): ChatMessage[] {
+function isOutgoingMessage(row: Element): boolean {
+  const dataIdEl = row.hasAttribute('data-id') ? row : row.querySelector('[data-id]');
+  const dataId = dataIdEl?.getAttribute('data-id');
+  if (dataId) {
+    if (dataId.startsWith('true_')) return true;
+    if (dataId.startsWith('false_')) return false;
+  }
+
+  const hasOutgoingIcon = !!(
+    row.querySelector('span[data-icon="msg-check"]') ||
+    row.querySelector('span[data-icon="msg-dblcheck"]') ||
+    row.querySelector('span[data-icon="msg-dblcheck-ack"]') ||
+    row.querySelector('span[data-icon="msg-time"]') ||
+    row.querySelector('svg[data-icon="msg-check"]') ||
+    row.querySelector('svg[data-icon="msg-dblcheck"]') ||
+    row.querySelector('svg[data-icon="msg-dblcheck-ack"]') ||
+    row.querySelector('svg[data-icon="msg-time"]')
+  );
+  if (hasOutgoingIcon) return true;
+
+  if (row.classList.contains('message-out') || row.querySelector('.message-out')) {
+    return true;
+  }
+  if (row.classList.contains('message-in') || row.querySelector('.message-in')) {
+    return false;
+  }
+
+  return false;
+}
+
+function extractMessageText(row: Element): string | null {
+  const quotedBox = row.querySelector('[data-testid="quoted-message"], [class*="quoted"]');
+  const textEls = Array.from(row.querySelectorAll(SEL.messageText));
+  const mainTextEl = textEls.find((el) => !quotedBox || !quotedBox.contains(el)) || textEls[textEls.length - 1];
+  return mainTextEl?.textContent?.trim() || null;
+}
+
+function isActiveChatGroup(contactName: string): boolean {
+  const header = document.querySelector('header');
+  if (header) {
+    if (
+      header.querySelector('span[data-icon="default-group"]') ||
+      header.querySelector('span[data-icon="community"]') ||
+      header.querySelector('[data-icon*="group"]') ||
+      header.querySelector('[data-icon*="community"]') ||
+      header.querySelector('[data-testid*="group"]')
+    ) {
+      return true;
+    }
+  }
+
+  const ref = contactRefFrom(contactName);
+  const candidate = getCandidateByRef(ref);
+  if (candidate?.isGroup !== undefined) {
+    return candidate.isGroup;
+  }
+
+  return false;
+}
+
+function getActiveUnreadCount(rows: NodeListOf<Element>, contactRef: string): number {
+  for (let i = 0; i < rows.length; i++) {
+    const text = (rows[i].textContent || '').toLowerCase();
+    if (
+      text.includes('unread message') ||
+      rows[i].querySelector('[data-testid="unread-bar"], [data-testid="unread-message-bar"]')
+    ) {
+      return Math.max(rows.length - 1 - i, 1);
+    }
+  }
+
+  const candidate = getCandidateByRef(contactRef);
+  if (candidate?.unreadCount && candidate.unreadCount > 0) {
+    return candidate.unreadCount;
+  }
+
+  return 0;
+}
+
+function extractMessages(maxMessages = 30): { messages: ChatMessage[]; unreadCount: number } {
   const rows = document.querySelectorAll(SEL.messageContainer);
   const messages: ChatMessage[] = [];
 
   const start = Math.max(0, rows.length - maxMessages);
   for (let i = start; i < rows.length; i++) {
     const row = rows[i];
-    const isOut = row.querySelector(SEL.messageOut) !== null;
-    const textEl = row.querySelector(SEL.messageText);
-    const text = textEl?.textContent?.trim();
+    const isOut = isOutgoingMessage(row);
+    const text = extractMessageText(row);
     if (!text) continue;
 
     const timeEl = row.querySelector(SEL.messageTime);
+    const authorEl = row.querySelector('[data-testid="author"], span[class*="author"], span[dir="auto"][style*="color"]');
+    const senderName = isOut ? 'You' : authorEl?.textContent?.trim() || undefined;
+
     messages.push({
       role: isOut ? 'me' : 'them',
       text,
       timestamp: timeEl?.textContent?.trim(),
+      senderName,
     });
   }
 
-  return messages;
+  const contactName = getActiveContactName() || '';
+  const contactRef = contactRefFrom(contactName);
+  const unreadCount = getActiveUnreadCount(rows, contactRef);
+
+  return { messages, unreadCount };
 }
 
 function insertReplyText(text: string): boolean {
@@ -76,10 +162,11 @@ function forwardContext(): void {
   const contactName = getActiveContactName();
   if (!contactName) return;
 
-  const messages = extractMessages();
+  const { messages, unreadCount } = extractMessages();
   if (messages.length === 0) return;
 
   const contactRef = contactRefFrom(contactName);
+  const isGroup = isActiveChatGroup(contactName);
 
   if (contactRef === lastForwardedRef && messages.length === lastMessageCount) {
     return;
@@ -94,6 +181,8 @@ function forwardContext(): void {
       contactRef,
       contactName,
       messages,
+      isGroup,
+      unreadCount,
     },
   }).catch((err) => console.error('[SaySo] Failed to forward context:', err));
 }

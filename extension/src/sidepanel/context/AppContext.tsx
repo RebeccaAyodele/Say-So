@@ -18,6 +18,8 @@ export interface AppState {
   isLoading: boolean;
   isScanning: boolean;
   replyMode: 'all_at_once' | 'point_by_point';
+  isGroup: boolean;
+  unreadCount: number;
   error: string | null;
 }
 
@@ -34,11 +36,13 @@ const initialState: AppState = {
   isLoading: false,
   isScanning: true,
   replyMode: 'all_at_once',
+  isGroup: false,
+  unreadCount: 0,
   error: null,
 };
 
 type Action =
-  | { type: 'SET_CONTEXT'; payload: { contactRef: string; contactName: string; messages: ChatMessage[] } }
+  | { type: 'SET_CONTEXT'; payload: { contactRef: string; contactName: string; messages: ChatMessage[]; isGroup?: boolean; unreadCount?: number } }
   | { type: 'SET_CANDIDATES'; payload: ReplyCandidate[] }
   | { type: 'SET_SCANNING'; payload: boolean }
   | { type: 'SET_REPLY_MODE'; payload: 'all_at_once' | 'point_by_point' }
@@ -53,15 +57,27 @@ type Action =
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'SET_CONTEXT':
+    case 'SET_CONTEXT': {
+      const isGroup =
+        action.payload.isGroup ??
+        state.candidates.find((c) => c.contactRef === action.payload.contactRef)?.isGroup ??
+        false;
+      const unreadCount =
+        action.payload.unreadCount ??
+        state.candidates.find((c) => c.contactRef === action.payload.contactRef)?.unreadCount ??
+        0;
+
       return {
         ...state,
         contactRef: action.payload.contactRef,
         contactName: action.payload.contactName,
         messages: action.payload.messages,
+        isGroup,
+        unreadCount,
         view: 'home',
         error: null,
       };
+    }
     case 'SET_CANDIDATES':
       return {
         ...state,
@@ -165,19 +181,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Listen for live updates forwarded via background
     const handler = (message: { type: string; payload?: unknown }) => {
       if (message.type === 'CONVERSATION_CONTEXT') {
-        const payload = message.payload as { contactRef: string; contactName: string; messages: ChatMessage[] };
+        const payload = message.payload as {
+          contactRef: string;
+          contactName: string;
+          messages: ChatMessage[];
+          isGroup?: boolean;
+          unreadCount?: number;
+        };
         dispatch({
           type: 'SET_CONTEXT',
           payload,
         });
 
-        // Instant Auto-Predict:
-        // When opening a chat where the other person sent the last message, immediately predict replies
+        // Instant Auto-Predict / Auto-Summarize:
         const msgs = payload.messages;
         const lastMsg = msgs[msgs.length - 1];
         if (lastMsg && lastMsg.role === 'them' && payload.contactRef !== lastGeneratedRef) {
           lastGeneratedRef = payload.contactRef;
-          executeGenerate(payload.contactRef, payload.contactName);
+          executeGenerate(payload.contactRef, payload.contactName, payload.isGroup, payload.unreadCount);
         }
       }
 
@@ -196,8 +217,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => chrome.runtime.onMessage.removeListener(handler);
   }, []);
 
-  async function executeGenerate(contactRef: string, contactName: string): Promise<void> {
+  async function executeGenerate(
+    contactRef: string,
+    contactName: string,
+    isGroupOverride?: boolean,
+    unreadOverride?: number,
+  ): Promise<void> {
     dispatch({ type: 'GENERATE_START' });
+
+    const isGroup =
+      isGroupOverride ??
+      state.isGroup ??
+      state.candidates.find((c) => c.contactRef === contactRef)?.isGroup ??
+      false;
+    const unreadCount =
+      unreadOverride ??
+      state.unreadCount ??
+      state.candidates.find((c) => c.contactRef === contactRef)?.unreadCount ??
+      0;
 
     try {
       const res = await sendToBackground({
@@ -206,6 +243,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           contactRef,
           contactName,
           replyMode: state.replyMode,
+          isGroup,
+          unreadCount,
         },
       });
 
@@ -222,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function generateReplies(): Promise<void> {
     if (!state.contactRef || !state.contactName) return;
-    await executeGenerate(state.contactRef, state.contactName);
+    await executeGenerate(state.contactRef, state.contactName, state.isGroup, state.unreadCount);
   }
 
   async function insertReply(text: string): Promise<void> {

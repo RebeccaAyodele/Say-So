@@ -219,10 +219,14 @@ export function CandidateList({
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
                     onClick={() => onOpenChat(displayName)}
-                    className="px-2.5 py-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 text-xs font-semibold border border-brand-500/30 transition-all active:scale-95"
-                    title="Open this chat in WhatsApp"
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all active:scale-95 ${
+                      isGroup
+                        ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border-purple-500/30'
+                        : 'bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border-brand-500/30'
+                    }`}
+                    title={isGroup ? 'Open group to summarize unread messages' : 'Open this chat in WhatsApp'}
                   >
-                    Reply
+                    {isGroup ? 'Summarize' : 'Reply'}
                   </button>
 
                   <button

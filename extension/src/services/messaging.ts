@@ -2,7 +2,7 @@ import type { ChatMessage, ReplyCandidate, CandidateSyncItem } from '@sayso/shar
 
 // ─── Message Types ───────────────────────────────────────────────────
 export type ExtensionMessage =
-  | { type: 'CONVERSATION_CONTEXT'; payload: { contactRef: string; contactName: string; messages: ChatMessage[] } }
+  | { type: 'CONVERSATION_CONTEXT'; payload: { contactRef: string; contactName: string; messages: ChatMessage[]; isGroup?: boolean; unreadCount?: number } }
   | { type: 'CANDIDATE_DETECTED'; payload: ReplyCandidate }
   | { type: 'CANDIDATES_SYNC_REQUEST'; payload: { candidates: CandidateSyncItem[] } }
   | { type: 'CANDIDATES_UPDATED'; payload: { candidates: ReplyCandidate[] } }
@@ -10,7 +10,7 @@ export type ExtensionMessage =
   | { type: 'DISMISS_CANDIDATE'; payload: { contactRef: string; revision: string } }
   | { type: 'OPEN_CHAT'; payload: { contactName: string } }
   | { type: 'INSERT_REPLY'; payload: { text: string } }
-  | { type: 'GENERATE_REQUEST'; payload: { contactRef: string; contactName: string; replyMode?: 'all_at_once' | 'point_by_point' } }
+  | { type: 'GENERATE_REQUEST'; payload: { contactRef: string; contactName: string; replyMode?: 'all_at_once' | 'point_by_point'; isGroup?: boolean; unreadCount?: number } }
   | { type: 'AUTH_STATE_CHANGED'; payload: { isAuthenticated: boolean } }
   | { type: 'SIDE_PANEL_READY' }
   | { type: 'PING' };

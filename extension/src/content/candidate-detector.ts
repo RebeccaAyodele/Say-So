@@ -108,6 +108,10 @@ function generateRevision(contactRef: string, timestamp?: string, unread?: numbe
 
 const candidateCache = new Map<string, CandidateSyncItem>();
 
+export function getCandidateByRef(ref: string): CandidateSyncItem | undefined {
+  return candidateCache.get(ref);
+}
+
 export function detectCandidates(): CandidateSyncItem[] {
   const pane =
     document.querySelector(CANDIDATE_SEL.paneSide) ??

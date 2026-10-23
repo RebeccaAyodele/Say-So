@@ -12,16 +12,22 @@ const STYLE_COLORS: Record<string, string> = {
   brief: 'from-sky-500/20 to-sky-600/10 border-sky-500/30',
   warm: 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
   direct: 'from-violet-500/20 to-violet-600/10 border-violet-500/30',
+  quick_summary: 'from-indigo-500/20 to-indigo-600/10 border-indigo-500/30',
+  key_takeaways: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
+  action_items: 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
 };
 
 const STYLE_LABELS: Record<string, string> = {
   brief: 'Brief',
   warm: 'Warm',
   direct: 'Direct',
+  quick_summary: 'Quick Summary',
+  key_takeaways: 'Key Points',
+  action_items: 'Action Items',
 };
 
 export function ReplyCard({ option, index }: ReplyCardProps) {
-  const { dispatch, insertReply } = useApp();
+  const { state, dispatch, insertReply } = useApp();
   const [copiedIndex, setCopiedIndex] = useState<number | 'all' | null>(null);
 
   const gradient = STYLE_COLORS[option.style] ?? STYLE_COLORS.brief;
@@ -128,19 +134,21 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
         <button
           onClick={(e) => { e.stopPropagation(); handleCopy(option.text, 'all'); }}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-300 transition-colors"
-          aria-label="Copy reply"
+          aria-label={state.isGroup ? 'Copy summary' : 'Copy reply'}
         >
           {copiedIndex === 'all' ? <Check size={13} className="text-brand-400" /> : <Copy size={13} />}
-          {copiedIndex === 'all' ? 'Copied' : isMultiPoint ? 'Copy All' : 'Copy'}
+          {copiedIndex === 'all' ? 'Copied' : state.isGroup ? 'Copy Summary' : isMultiPoint ? 'Copy All' : 'Copy'}
         </button>
 
-        <button
-          onClick={(e) => { e.stopPropagation(); handleInsert(option.text); }}
-          className="ml-auto flex items-center gap-1.5 text-xs font-medium text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 px-3 py-1 rounded-full transition-all"
-          aria-label="Insert reply into WhatsApp"
-        >
-          {isMultiPoint ? 'Insert All' : 'Insert'}
-        </button>
+        {!state.isGroup && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleInsert(option.text); }}
+            className="ml-auto flex items-center gap-1.5 text-xs font-medium text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 px-3 py-1 rounded-full transition-all"
+            aria-label="Insert reply into WhatsApp"
+          >
+            {isMultiPoint ? 'Insert All' : 'Insert'}
+          </button>
+        )}
       </div>
     </div>
   );
