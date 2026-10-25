@@ -28,6 +28,15 @@ export function createApp(): Express {
 
   app.use(express.json({ limit: '1mb' }));
 
+  // Root route – friendly landing for the base URL
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Say-So API',
+      status: 'online',
+      docs: '/v1/health',
+    });
+  });
+
   // Routes
   app.use('/v1/health', healthRouter);
   app.use('/v1/contacts', contactsRouter);

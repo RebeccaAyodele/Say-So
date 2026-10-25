@@ -167,7 +167,7 @@ export function CandidateList({
           {displayedCandidates.map((candidate) => {
             const displayName = candidate.contactName || candidate.contactRef.replace('wa:', '');
             const unread = candidate.unreadCount ?? 0;
-            const isGroup = !!candidate.isGroup;
+            const isGroup = filter === 'direct' ? false : filter === 'group' ? true : !!candidate.isGroup;
 
             return (
               <div

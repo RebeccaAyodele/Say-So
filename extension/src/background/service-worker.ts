@@ -1,22 +1,11 @@
-/**
- * SaySo Chrome Extension — Background Service Worker (MV3)
- *
- * Responsibilities:
- * 1. Open side panel when extension action is clicked
- * 2. Route messages between content-script ↔ sidepanel
- * 3. Forward GENERATE_REQUEST to the API and relay results
- * 4. Sync and manage unreplied candidates (inbox management)
- */
 
 import { onMessage, sendToContentScript } from '../services/messaging';
 import type { ExtensionMessage, MessageResponse } from '../services/messaging';
 import { api, formatFriendlyError } from '../services/api-client';
 import type { ChatMessage, ReplyCandidate } from '@sayso/shared';
 
-// ─── State ───────────────────────────────────────────────────────────
 let whatsappTabId: number | null = null;
 
-/** Track the latest conversation context forwarded by the content script */
 let latestContext: {
   contactRef: string;
   contactName: string;
@@ -25,15 +14,14 @@ let latestContext: {
   unreadCount?: number;
 } | null = null;
 
-/** Cached list of active candidates */
 let activeCandidates: ReplyCandidate[] = [];
 
-// ─── Side Panel Setup ────────────────────────────────────────────────
+
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
   .catch(console.error);
 
-// ─── Tab Tracking & Injection ────────────────────────────────────────
+
 function initWhatsAppTabs(): void {
   chrome.tabs.query({ url: '*://web.whatsapp.com/*' }, (tabs) => {
     for (const tab of tabs) {
@@ -43,12 +31,12 @@ function initWhatsAppTabs(): void {
           tabId: tab.id,
           path: 'sidepanel.html',
           enabled: true,
-        }).catch(() => {});
+        }).catch(() => { });
 
         chrome.scripting.executeScript({
           target: { tabId: tab.id },
           files: ['content.js'],
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   });
@@ -64,12 +52,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       tabId,
       path: 'sidepanel.html',
       enabled: true,
-    }).catch(() => {});
+    }).catch(() => { });
 
     chrome.scripting.executeScript({
       target: { tabId },
       files: ['content.js'],
-    }).catch(() => {});
+    }).catch(() => { });
   }
 });
 
@@ -77,7 +65,6 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   if (tabId === whatsappTabId) whatsappTabId = null;
 });
 
-// ─── Message Router ──────────────────────────────────────────────────
 onMessage(
   (
     message: ExtensionMessage,
@@ -85,13 +72,12 @@ onMessage(
     sendResponse: (r: MessageResponse) => void,
   ): boolean | void => {
     switch (message.type) {
-      // Content script → service worker: new conversation context
       case 'CONVERSATION_CONTEXT': {
         latestContext = message.payload;
         if (sender.tab?.id) whatsappTabId = sender.tab.id;
 
         // Broadcast to open side panel views so they update immediately
-        chrome.runtime.sendMessage(message).catch(() => {});
+        chrome.runtime.sendMessage(message).catch(() => { });
         sendResponse({ success: true });
         return;
       }
@@ -108,11 +94,9 @@ onMessage(
         return;
       }
 
-      // Content script → service worker: candidate sync request
       case 'CANDIDATES_SYNC_REQUEST': {
         const rawCandidates = message.payload.candidates;
 
-        // Try syncing with API server (MongoDB Atlas)
         api
           .syncInbox({ candidates: rawCandidates })
           .then(async () => {
@@ -121,10 +105,9 @@ onMessage(
             chrome.runtime.sendMessage({
               type: 'CANDIDATES_UPDATED',
               payload: { candidates: activeCandidates },
-            }).catch(() => {});
+            }).catch(() => { });
           })
           .catch(() => {
-            // Offline/fallback mode: map raw candidate items directly
             activeCandidates = rawCandidates.map((c) => ({
               userId: 'local',
               contactRef: c.contactRef,
@@ -140,14 +123,13 @@ onMessage(
             chrome.runtime.sendMessage({
               type: 'CANDIDATES_UPDATED',
               payload: { candidates: activeCandidates },
-            }).catch(() => {});
+            }).catch(() => { });
           });
 
         sendResponse({ success: true });
         return;
       }
 
-      // Side panel → service worker: get active candidates
       case 'GET_CANDIDATES': {
         if (activeCandidates.length > 0) {
           sendResponse({ success: true, data: activeCandidates });
@@ -167,7 +149,6 @@ onMessage(
         return true;
       }
 
-      // Side panel → service worker: dismiss candidate
       case 'DISMISS_CANDIDATE': {
         const { contactRef, revision } = message.payload;
         activeCandidates = activeCandidates.filter((c) => c.contactRef !== contactRef);
@@ -179,13 +160,12 @@ onMessage(
         chrome.runtime.sendMessage({
           type: 'CANDIDATES_UPDATED',
           payload: { candidates: activeCandidates },
-        }).catch(() => {});
+        }).catch(() => { });
 
         sendResponse({ success: true });
         return;
       }
 
-      // Side panel → service worker → content script: open specific chat
       case 'OPEN_CHAT': {
         chrome.tabs.query({ url: '*://web.whatsapp.com/*' }, (tabs) => {
           const tab = tabs.find((t) => t.active) || tabs[0];
@@ -195,7 +175,7 @@ onMessage(
           }
           whatsappTabId = tab.id;
           // Bring the tab into focus
-          chrome.tabs.update(tab.id, { active: true }).catch(() => {});
+          chrome.tabs.update(tab.id, { active: true }).catch(() => { });
 
           sendToContentScript(tab.id, message)
             .then((r) => sendResponse(r))
@@ -204,7 +184,6 @@ onMessage(
         return true;
       }
 
-      // Side panel → service worker: generate replies for current contact
       case 'GENERATE_REQUEST': {
         if (!latestContext) {
           sendResponse({ success: false, error: 'No conversation context available. Please click on a chat in WhatsApp Web first.' });
@@ -236,7 +215,6 @@ onMessage(
         return true;
       }
 
-      // Side panel → service worker → content script: insert reply text
       case 'INSERT_REPLY': {
         if (!whatsappTabId) {
           sendResponse({ success: false, error: 'WhatsApp tab not found' });

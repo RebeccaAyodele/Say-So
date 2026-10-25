@@ -16,7 +16,7 @@ import type {
 } from '@sayso/shared';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/v1';
+  import.meta.env.VITE_API_BASE_URL ?? 'https://say-so-3m9u.onrender.com/v1';
 
 /** Retrieve the stored auth token from chrome.storage.local */
 async function getAuthToken(): Promise<string | null> {

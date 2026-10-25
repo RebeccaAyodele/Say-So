@@ -78,12 +78,19 @@ function reducer(state: AppState, action: Action): AppState {
         error: null,
       };
     }
-    case 'SET_CANDIDATES':
+    case 'SET_CANDIDATES': {
+      const sorted = [...action.payload].sort((a, b) => {
+        const timeA = a.lastMessageTimestamp || '';
+        const timeB = b.lastMessageTimestamp || '';
+        if (timeA === timeB) return 0;
+        return timeB > timeA ? 1 : -1;
+      });
       return {
         ...state,
-        candidates: action.payload,
+        candidates: sorted,
         isScanning: false,
       };
+    }
     case 'SET_SCANNING':
       return {
         ...state,
@@ -282,10 +289,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function openChat(contactName: string): Promise<void> {
+    const candidate = state.candidates.find(
+      (c) => (c.contactName || c.contactRef.replace('wa:', '')) === contactName
+    );
+
     await sendToBackground({
       type: 'OPEN_CHAT',
       payload: { contactName },
     }).catch(console.error);
+
+    if (candidate?.isGroup) return;
+
+    setTimeout(async () => {
+      const contactRef = candidate?.contactRef || `wa:${contactName.replace(/\s+/g, '_').toLowerCase()}`;
+      await executeGenerate(contactRef, contactName, false, 0);
+    }, 1200);
   }
 
   async function refreshCandidates(): Promise<void> {
