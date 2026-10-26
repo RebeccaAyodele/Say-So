@@ -74,7 +74,7 @@ export function DraftEditor() {
       <div className="flex items-center gap-2 mb-3">
         <button
           onClick={() => dispatch({ type: 'SET_VIEW', payload: 'replies' })}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-surface-card transition-all"
+          className="p-1.5 rounded-md text-gray-400 hover:text-gray-100 hover:bg-surface-cardHover transition-colors"
           aria-label="Back to replies"
         >
           <ArrowLeft size={18} />

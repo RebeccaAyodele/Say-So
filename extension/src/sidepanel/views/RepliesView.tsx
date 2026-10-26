@@ -21,7 +21,7 @@ export function RepliesView() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-100 transition-colors"
         >
           <ArrowLeft size={14} />
           Back
@@ -44,8 +44,8 @@ export function RepliesView() {
         <LoadingSpinner />
       ) : (
         <div className="space-y-3">
-          {state.replyOptions.map((opt, i) => (
-            <ReplyCard key={opt.id} option={opt} index={i} />
+          {state.replyOptions.map((opt) => (
+            <ReplyCard key={opt.id} option={opt} />
           ))}
         </div>
       )}

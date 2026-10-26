@@ -52,7 +52,7 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
           <p className="text-[10px] uppercase tracking-wider text-gray-500">Signed in</p>
           <p className="truncate text-xs text-gray-200">{auth.email || 'Supabase account'}</p>
         </div>
-        <button onClick={handleSignOut} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white">
+        <button onClick={handleSignOut} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-100">
           <LogOut size={14} /> Sign out
         </button>
       </div>
@@ -62,7 +62,7 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
   return (
     <form onSubmit={handleSubmit} className="panel flex w-full max-w-sm flex-col gap-4 p-5">
       <div>
-        <h2 className="text-sm font-bold text-white">{mode === 'signIn' ? 'Sign in to SaySo' : 'Create your SaySo account'}</h2>
+        <h2 className="text-sm font-semibold text-gray-100">{mode === 'signIn' ? 'Sign in to SaySo' : 'Create your SaySo account'}</h2>
         <p className="mt-1 text-[11px] leading-relaxed text-gray-400">Use your SaySo account to generate replies.</p>
       </div>
       <label className="flex flex-col gap-1.5 text-[11px] font-semibold text-gray-300">
@@ -108,8 +108,8 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
           </button>
         </span>
       </label>
-      {error && <p className="text-xs text-red-300">{error}</p>}
-      {notice && <p className="text-xs text-emerald-300">{notice}</p>}
+      {error && <p className="text-xs text-red-700">{error}</p>}
+      {notice && <p className="text-xs text-brand-700">{notice}</p>}
       <button disabled={busy} className="button-primary flex items-center justify-center gap-2 py-2.5 text-xs font-semibold">
         {busy ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
         {busy ? 'Please wait…' : mode === 'signIn' ? 'Sign in' : 'Create account'}

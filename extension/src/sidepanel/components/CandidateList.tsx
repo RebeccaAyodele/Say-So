@@ -37,7 +37,7 @@ export function CandidateList({
       <div className="flex flex-col gap-2 px-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <h2 className="text-sm font-semibold text-gray-100">
               Unreplied Messages
             </h2>
             {isScanning && (
@@ -120,7 +120,7 @@ export function CandidateList({
 
       {/* Scanning State (when initially loading candidates) */}
       {isScanning && candidates.length === 0 ? (
-        <div className="panel p-5 text-center flex flex-col items-center">
+              <div className="panel p-5 text-center flex flex-col items-center">
           <div className="w-11 h-11 mb-3 rounded-xl bg-surface-base border border-surface-border flex items-center justify-center text-brand-400">
             <Loader2 size={22} className="animate-spin" />
           </div>
@@ -182,8 +182,8 @@ export function CandidateList({
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform border ${
                       isGroup
-                        ? 'bg-surface-base border-surface-border text-purple-300'
-                        : 'bg-surface-base border-surface-border text-brand-300'
+                        ? 'bg-surface-base border-surface-border text-brand-600'
+                        : 'bg-surface-base border-surface-border text-brand-600'
                     }`}
                   >
                     {isGroup ? <Users size={16} /> : <User size={16} />}
@@ -209,7 +209,7 @@ export function CandidateList({
                         </span>
                       )}
                       <span>•</span>
-                      <span className="text-amber-400/90 font-medium">Awaiting reply</span>
+                      <span className="text-gray-500">Awaiting reply</span>
                     </div>
                   </div>
                 </div>
@@ -218,11 +218,7 @@ export function CandidateList({
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
                     onClick={() => onOpenChat(displayName)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all active:scale-95 ${
-                      isGroup
-                        ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border-purple-500/30'
-                        : 'bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border-brand-500/30'
-                    }`}
+                    className="rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
                     title={isGroup ? 'Open group to summarize unread messages' : 'Open this chat in WhatsApp'}
                   >
                     {isGroup ? 'Summarize' : 'Reply'}

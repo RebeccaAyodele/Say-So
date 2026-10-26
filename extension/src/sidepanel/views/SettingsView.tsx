@@ -48,11 +48,11 @@ export function SettingsView() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-surface-card transition-all"
+          className="p-1.5 rounded-md text-gray-400 hover:text-gray-100 hover:bg-surface-cardHover transition-colors"
         >
           <ArrowLeft size={18} />
         </button>
-        <h2 className="text-sm font-bold text-white">Settings</h2>
+        <h2 className="text-sm font-semibold text-gray-100">Settings</h2>
       </div>
 
       {auth && <AuthPanel auth={auth} onChange={(next) => { setAuth(next); if (!next.isAuthenticated) setPrefs(null); }} />}
@@ -75,7 +75,7 @@ export function SettingsView() {
                   onClick={() => setPrefs((current) => (current ? { ...current, defaultTone: t } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.defaultTone === t
-                      ? 'bg-brand-900 border-brand-700 text-brand-200 font-semibold'
+                      ? 'bg-brand-50 border-brand-300 text-brand-700 font-semibold'
                       : 'bg-surface-card border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-600'
                   }`}
                 >
@@ -97,7 +97,7 @@ export function SettingsView() {
                   onClick={() => setPrefs((current) => (current ? { ...current, defaultReplyLength: l } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.defaultReplyLength === l
-                      ? 'bg-brand-900 border-brand-700 text-brand-200 font-semibold'
+                      ? 'bg-brand-50 border-brand-300 text-brand-700 font-semibold'
                       : 'bg-surface-card border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-600'
                   }`}
                 >
@@ -119,7 +119,7 @@ export function SettingsView() {
                   onClick={() => setPrefs((current) => (current ? { ...current, learningMode: m } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.learningMode === m
-                      ? 'bg-brand-900 border-brand-700 text-brand-200 font-semibold'
+                      ? 'bg-brand-50 border-brand-300 text-brand-700 font-semibold'
                       : 'bg-surface-card border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-600'
                   }`}
                 >

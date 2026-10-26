@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { PrivacyNotice } from '../components/PrivacyNotice';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { CandidateList } from '../components/CandidateList';
-import { Zap, MessageSquarePlus, AlertCircle, Users, FileText } from 'lucide-react';
+import { MessageSquarePlus, AlertCircle, Users, FileText } from 'lucide-react';
 
 export function HomeView() {
   const {
@@ -23,22 +23,15 @@ export function HomeView() {
   return (
     <div className="flex flex-col gap-4">
       {/* Hero */}
-      <div className="text-center py-5">
-        <div className={`w-14 h-14 mx-auto mb-3.5 rounded-2xl flex items-center justify-center border ${
-          state.isGroup
-            ? 'bg-surface-card border-surface-border text-purple-300'
-            : 'bg-surface-card border-surface-border text-brand-300'
-        }`}>
-          {state.isGroup ? <Users size={26} /> : <MessageSquarePlus size={26} />}
-        </div>
-        <h1 className="text-base font-bold text-white mb-1">
+      <div className="border-b border-surface-border px-1 pb-4 pt-2">
+        <h1 className="text-lg font-semibold text-gray-100 mb-1">
           {hasContext
             ? state.isGroup
               ? `Catch up on ${state.contactName}`
               : `Reply to ${state.contactName}`
             : 'Select a Chat'}
         </h1>
-        <p className="text-xs text-gray-400 max-w-[250px] mx-auto leading-relaxed">
+        <p className="text-xs text-gray-400 leading-relaxed">
           {hasContext
             ? state.isGroup
               ? state.unreadCount > 0
@@ -53,18 +46,18 @@ export function HomeView() {
 
       {/* Actionable Error Banner */}
       {state.error && (
-        <div className="flex flex-col gap-2 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-sm text-red-200">
+        <div className="flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-3.5 text-sm text-red-800">
           <div className="flex items-start gap-2.5">
-            <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-400" />
+            <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-700" />
             <div className="flex-1 text-xs leading-relaxed">
-              <span className="font-semibold block text-red-300 mb-0.5">Notice</span>
+              <span className="font-semibold block text-red-800 mb-0.5">Notice</span>
               {state.error}
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 mt-1">
             <button
               onClick={clearError}
-              className="text-[11px] px-2.5 py-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="text-[11px] px-2.5 py-1 rounded-md text-gray-500 hover:text-gray-100 hover:bg-red-100 transition-colors"
             >
               Dismiss
             </button>
@@ -74,7 +67,7 @@ export function HomeView() {
                   clearError();
                   generateReplies();
                 }}
-                className="text-[11px] font-semibold px-3 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 transition-colors"
+                className="text-[11px] font-semibold px-3 py-1 rounded-md bg-red-100 hover:bg-red-200 text-red-800 border border-red-200 transition-colors"
               >
                 Try Again
               </button>
@@ -91,7 +84,7 @@ export function HomeView() {
               Reply Style
             </span>
             {hasMultiplePoints && (
-              <span className="text-[10px] text-amber-400/90 font-medium">
+              <span className="text-[10px] text-gray-500 font-medium">
                 Multiple points detected
               </span>
             )}
@@ -128,15 +121,15 @@ export function HomeView() {
         <button
           onClick={generateReplies}
           disabled={state.isLoading}
-          className={`w-full py-3.5 rounded-lg text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none ${
+          className={`w-full py-3 rounded-md text-white text-sm font-medium transition-colors disabled:opacity-60 disabled:pointer-events-none ${
             state.isGroup
-              ? 'bg-purple-800 hover:bg-purple-700'
+              ? 'bg-brand-700 hover:bg-brand-600'
               : 'bg-brand-700 hover:bg-brand-600'
           }`}
         >
           <span className="flex items-center justify-center gap-2">
-            {state.isGroup ? <FileText size={16} /> : <Zap size={16} />}
-            {state.isGroup ? 'Summarize Unread Messages' : 'Generate Smart Replies'}
+            {state.isGroup ? <FileText size={16} /> : <MessageSquarePlus size={16} />}
+            {state.isGroup ? 'Summarize unread messages' : 'Generate replies'}
           </span>
         </button>
       )}

@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-surface-base text-gray-100 font-sans antialiased selection:bg-brand-700 selection:text-white;
+    @apply bg-surface-base text-gray-100 font-sans antialiased selection:bg-brand-200 selection:text-gray-100;
   }
 }
 
@@ -19,7 +19,7 @@
   opacity: 1;
 }
 
-/* Keep Chrome's selected autofill values readable in the dark extension UI. */
+/* Keep Chrome's selected autofill values readable in the extension UI. */
 .auth-input:-webkit-autofill,
 .auth-input:-webkit-autofill:hover,
 .auth-input:-webkit-autofill:focus {

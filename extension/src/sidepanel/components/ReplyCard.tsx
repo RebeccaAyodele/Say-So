@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import type { ReplyOption } from '@sayso/shared';
 import { useApp } from '../context/AppContext';
-import { Check, Copy, Sparkles } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 
 interface ReplyCardProps {
   option: ReplyOption;
-  index: number;
 }
 
 const STYLE_LABELS: Record<string, string> = {
@@ -17,7 +16,7 @@ const STYLE_LABELS: Record<string, string> = {
   action_items: 'Action Items',
 };
 
-export function ReplyCard({ option, index }: ReplyCardProps) {
+export function ReplyCard({ option }: ReplyCardProps) {
   const { state, dispatch, insertReply } = useApp();
   const [copiedIndex, setCopiedIndex] = useState<number | 'all' | null>(null);
 
@@ -44,9 +43,8 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
   return (
     <div
       className={`
-        panel panel-hover rounded-xl p-4 cursor-pointer
+        panel panel-hover rounded-lg p-4 cursor-pointer
       `}
-      style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
       onClick={handleSelect}
       role="button"
       tabIndex={0}
@@ -54,7 +52,7 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
     >
       {/* Style badge */}
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-xs font-semibold tracking-wide uppercase text-gray-300">
+        <span className="text-xs font-medium text-gray-400">
           {label}
         </span>
         <div className="flex items-center gap-1.5">
@@ -63,7 +61,6 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
               {rawLines.length} points
             </span>
           )}
-          <Sparkles size={14} className="text-gray-500" />
         </div>
       </div>
 
@@ -117,7 +114,7 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
       )}
 
       {/* Card Actions */}
-      <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-white/5">
+      <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-surface-border">
         <button
           onClick={(e) => { e.stopPropagation(); handleCopy(option.text, 'all'); }}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-300 transition-colors"

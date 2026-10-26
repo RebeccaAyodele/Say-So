@@ -13,7 +13,7 @@ export function SidePanelApp() {
     <div className="flex flex-col h-screen bg-surface-base text-gray-100 font-sans">
       <Header />
 
-      <main className="flex-1 overflow-y-auto px-3 py-4">
+      <main className="flex-1 overflow-y-auto px-4 py-4">
         {state.view === 'home' && <HomeView />}
         {state.view === 'replies' && <RepliesView />}
         {state.view === 'editor' && <EditorView />}

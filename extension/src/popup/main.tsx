@@ -17,15 +17,15 @@ function Popup() {
   return (
     <div className="flex flex-col items-center justify-center p-6 text-center font-sans">
       {/* Logo */}
-      <div className="w-14 h-14 rounded-xl bg-brand-700 flex items-center justify-center mb-4">
-        <MessageCircle size={24} className="text-white" />
+      <div className="w-12 h-12 rounded-lg border border-surface-border bg-surface-card flex items-center justify-center mb-4 text-brand-700">
+        <MessageCircle size={22} />
       </div>
 
-      <h1 className="text-lg font-bold text-white mb-1">
-        Say<span className="text-brand-400">So</span>
+      <h1 className="text-lg font-semibold text-gray-100 mb-1">
+        SaySo
       </h1>
       <p className="text-xs text-gray-400 mb-5 max-w-[220px] leading-relaxed">
-        AI-powered personal reply assistant for WhatsApp Web
+        A little help with your WhatsApp replies
       </p>
 
       <button
