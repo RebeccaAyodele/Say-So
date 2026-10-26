@@ -9,9 +9,9 @@
 }
 
 .auth-input {
-  color: #f9fafb !important;
+  color: theme('colors.gray.100') !important;
   caret-color: theme('colors.brand.300');
-  -webkit-text-fill-color: #f9fafb;
+  -webkit-text-fill-color: theme('colors.gray.100');
 }
 
 .auth-input::placeholder {
@@ -23,7 +23,7 @@
 .auth-input:-webkit-autofill,
 .auth-input:-webkit-autofill:hover,
 .auth-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f9fafb;
+  -webkit-text-fill-color: theme('colors.gray.100');
   -webkit-box-shadow: 0 0 0 1000px theme('colors.surface.base') inset;
   transition: background-color 9999s ease-in-out 0s;
 }
@@ -45,10 +45,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #465049;
+  background: theme('colors.surface.border');
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #626e65;
+  background: theme('colors.gray.600');
 }

@@ -64,7 +64,7 @@ export function SettingsView() {
       ) : auth.isAuthenticated && prefs ? (
         <>
           {/* Default Tone */}
-          <div className="glass-panel rounded-xl p-4 border border-surface-border space-y-2.5">
+          <div className="panel space-y-2.5 p-4">
             <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
               Default Tone
             </label>
@@ -75,7 +75,7 @@ export function SettingsView() {
                   onClick={() => setPrefs((current) => (current ? { ...current, defaultTone: t } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.defaultTone === t
-                      ? 'bg-brand-500/15 border-brand-500/40 text-brand-300 font-semibold'
+                      ? 'bg-brand-900 border-brand-700 text-brand-200 font-semibold'
                       : 'bg-surface-card border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-600'
                   }`}
                 >
@@ -86,7 +86,7 @@ export function SettingsView() {
           </div>
 
           {/* Reply Length */}
-          <div className="glass-panel rounded-xl p-4 border border-surface-border space-y-2.5">
+          <div className="panel space-y-2.5 p-4">
             <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
               Reply Length
             </label>
@@ -97,7 +97,7 @@ export function SettingsView() {
                   onClick={() => setPrefs((current) => (current ? { ...current, defaultReplyLength: l } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.defaultReplyLength === l
-                      ? 'bg-brand-500/15 border-brand-500/40 text-brand-300 font-semibold'
+                      ? 'bg-brand-900 border-brand-700 text-brand-200 font-semibold'
                       : 'bg-surface-card border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-600'
                   }`}
                 >
@@ -108,7 +108,7 @@ export function SettingsView() {
           </div>
 
           {/* Learning Mode */}
-          <div className="glass-panel rounded-xl p-4 border border-surface-border space-y-2.5">
+          <div className="panel space-y-2.5 p-4">
             <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
               Learning Mode
             </label>
@@ -119,7 +119,7 @@ export function SettingsView() {
                   onClick={() => setPrefs((current) => (current ? { ...current, learningMode: m } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.learningMode === m
-                      ? 'bg-brand-500/15 border-brand-500/40 text-brand-300 font-semibold'
+                      ? 'bg-brand-900 border-brand-700 text-brand-200 font-semibold'
                       : 'bg-surface-card border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-600'
                   }`}
                 >
@@ -136,7 +136,7 @@ export function SettingsView() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white text-sm font-bold shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            className="button-primary w-full py-3 text-sm font-semibold flex items-center justify-center gap-2"
           >
             {saving ? (
               <Loader2 size={15} className="animate-spin" />

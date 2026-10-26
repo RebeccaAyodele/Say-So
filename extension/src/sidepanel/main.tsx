@@ -21,7 +21,7 @@ function AuthenticatedSidePanel() {
 
   if (!auth.isAuthenticated) {
     return (
-      <div className="flex min-h-screen max-h-screen items-start justify-center overflow-y-auto bg-surface-base px-4 py-6 font-['Plus_Jakarta_Sans',sans-serif] text-gray-100">
+      <div className="flex min-h-screen max-h-screen items-start justify-center overflow-y-auto bg-surface-base px-4 py-6 font-sans text-gray-100">
         <AuthPanel auth={auth} onChange={setAuth} />
       </div>
     );

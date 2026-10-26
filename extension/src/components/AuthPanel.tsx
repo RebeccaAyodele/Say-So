@@ -110,7 +110,7 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
       </label>
       {error && <p className="text-xs text-red-300">{error}</p>}
       {notice && <p className="text-xs text-emerald-300">{notice}</p>}
-      <button disabled={busy} className="flex items-center justify-center gap-2 rounded-lg bg-brand-500 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+      <button disabled={busy} className="button-primary flex items-center justify-center gap-2 py-2.5 text-xs font-semibold">
         {busy ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
         {busy ? 'Please wait…' : mode === 'signIn' ? 'Sign in' : 'Create account'}
       </button>

@@ -15,9 +15,9 @@ function Popup() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 text-center font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="flex flex-col items-center justify-center p-6 text-center font-sans">
       {/* Logo */}
-      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30 mb-4">
+      <div className="w-14 h-14 rounded-xl bg-brand-700 flex items-center justify-center mb-4">
         <MessageCircle size={24} className="text-white" />
       </div>
 
@@ -30,7 +30,7 @@ function Popup() {
 
       <button
         onClick={openSidePanel}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white text-sm font-semibold shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-95 transition-all"
+        className="button-primary w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold active:scale-[0.98]"
       >
         <ExternalLink size={15} />
         Open Side Panel

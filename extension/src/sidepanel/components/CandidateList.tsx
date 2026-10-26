@@ -41,7 +41,7 @@ export function CandidateList({
               Unreplied Messages
             </h2>
             {isScanning && (
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full border border-brand-500/20 animate-pulse">
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-brand-300 bg-surface-base px-2 py-0.5 rounded-full border border-surface-border">
                 <Loader2 size={10} className="animate-spin" />
                 Scanning...
               </span>
@@ -71,7 +71,7 @@ export function CandidateList({
             onClick={() => setFilter('direct')}
             className={`flex-1 py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
               filter === 'direct'
-                ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30'
+                ? 'bg-brand-700 text-white'
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -90,7 +90,7 @@ export function CandidateList({
             onClick={() => setFilter('group')}
             className={`flex-1 py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
               filter === 'group'
-                ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30'
+                ? 'bg-brand-700 text-white'
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -109,7 +109,7 @@ export function CandidateList({
             onClick={() => setFilter('all')}
             className={`py-1.5 px-2.5 rounded-lg font-semibold transition-all ${
               filter === 'all'
-                ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30'
+                ? 'bg-brand-700 text-white'
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -120,10 +120,9 @@ export function CandidateList({
 
       {/* Scanning State (when initially loading candidates) */}
       {isScanning && candidates.length === 0 ? (
-        <div className="glass-card rounded-2xl p-5 border border-surface-border/60 text-center flex flex-col items-center">
-          <div className="relative w-11 h-11 mb-3 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400">
+        <div className="panel p-5 text-center flex flex-col items-center">
+          <div className="w-11 h-11 mb-3 rounded-xl bg-surface-base border border-surface-border flex items-center justify-center text-brand-400">
             <Loader2 size={22} className="animate-spin" />
-            <span className="absolute inset-0 rounded-2xl bg-brand-500/20 animate-ping opacity-30" />
           </div>
           <p className="text-sm font-semibold text-gray-200">
             Scanning WhatsApp for unreplied chats...
@@ -133,13 +132,13 @@ export function CandidateList({
           </p>
           {/* Shimmer skeleton items */}
           <div className="w-full mt-4 space-y-2">
-            <div className="h-12 w-full rounded-xl bg-surface-card/60 animate-pulse border border-surface-border/40" />
-            <div className="h-12 w-full rounded-xl bg-surface-card/40 animate-pulse border border-surface-border/30" />
+            <div className="h-12 w-full rounded-lg bg-surface-base border border-surface-border" />
+            <div className="h-12 w-full rounded-lg bg-surface-base border border-surface-border" />
           </div>
         </div>
       ) : displayedCandidates.length === 0 ? (
-        <div className="glass-card rounded-2xl p-5 border border-surface-border/60 text-center">
-          <div className="w-10 h-10 mx-auto mb-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+        <div className="panel p-5 text-center">
+          <div className="w-10 h-10 mx-auto mb-2.5 rounded-lg bg-surface-base border border-surface-border flex items-center justify-center text-brand-400">
             <CheckCircle2 size={20} />
           </div>
           <p className="text-sm font-semibold text-gray-200">
@@ -172,7 +171,7 @@ export function CandidateList({
             return (
               <div
                 key={candidate.contactRef}
-                className="glass-card rounded-xl p-3 border border-surface-border hover:border-brand-500/40 transition-all flex items-center justify-between gap-3 group"
+                className="panel panel-hover rounded-xl p-3 flex items-center justify-between gap-3 group"
               >
                 {/* Left Info */}
                 <div
@@ -183,8 +182,8 @@ export function CandidateList({
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform border ${
                       isGroup
-                        ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
-                        : 'bg-brand-500/20 border-brand-500/30 text-brand-400'
+                        ? 'bg-surface-base border-surface-border text-purple-300'
+                        : 'bg-surface-base border-surface-border text-brand-300'
                     }`}
                   >
                     {isGroup ? <Users size={16} /> : <User size={16} />}
@@ -196,7 +195,7 @@ export function CandidateList({
                         {displayName}
                       </span>
                       {unread > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-brand-500 text-white shadow-sm shadow-brand-500/30 flex-shrink-0">
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-brand-700 text-white flex-shrink-0">
                           {unread}
                         </span>
                       )}
