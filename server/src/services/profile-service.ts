@@ -9,6 +9,8 @@ import type {
 } from '@sayso/shared';
 
 export class ProfileService {
+  private readonly layeredContextCache = new Map<string, { expiresAt: number; value: Awaited<ReturnType<ProfileService['getLayeredStyleContext']>> }>();
+
   async getUserProfile(userId: string): Promise<UserStyleProfile> {
     let profile = await UserProfileModel.findOne({ userId });
 
@@ -35,6 +37,7 @@ export class ProfileService {
       { $set: updates },
       { new: true, upsert: true }
     );
+    for (const key of this.layeredContextCache.keys()) if (key.startsWith(`${userId}:`)) this.layeredContextCache.delete(key);
     return updated.toObject() as unknown as UserStyleProfile;
   }
 
@@ -94,11 +97,13 @@ export class ProfileService {
     }
 
     const saved = await existing.save();
+    this.layeredContextCache.delete(`${userId}:${contactRef}`);
     return saved.toObject() as unknown as ContactProfile;
   }
 
   async deleteContactProfile(userId: string, contactRef: string): Promise<boolean> {
     const result = await ContactProfileModel.deleteOne({ userId, contactRef });
+    this.layeredContextCache.delete(`${userId}:${contactRef}`);
     return result.deletedCount > 0;
   }
 
@@ -116,8 +121,14 @@ export class ProfileService {
     contactEmojiPreference: string;
     relationship?: string;
   }> {
-    const userProfile = await this.getUserProfile(userId);
-    const contactProfile = await this.getContactProfile(userId, contactRef);
+    const cacheKey = `${userId}:${contactRef}`;
+    const cached = this.layeredContextCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+    const [userProfile, contactProfile] = await Promise.all([
+      this.getUserProfile(userId),
+      this.getContactProfile(userId, contactRef),
+    ]);
 
     // Filter relevant high & medium confidence general signals
     const generalStyleSummary = (userProfile.styleSignals || [])
@@ -130,7 +141,7 @@ export class ProfileService {
     const contactEmojiPreference = contactProfile?.userToContactStyle?.emojiPreference || 'minimal';
     const relationship = contactProfile?.contactStyle?.relationship;
 
-    return {
+    const value = {
       generalStyleSummary,
       contactFormality,
       contactGreetings,
@@ -138,6 +149,8 @@ export class ProfileService {
       contactEmojiPreference,
       relationship,
     };
+    this.layeredContextCache.set(cacheKey, { value, expiresAt: Date.now() + 30_000 });
+    return value;
   }
 }
 

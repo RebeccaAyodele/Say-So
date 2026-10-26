@@ -40,9 +40,14 @@ export class AgentTracer {
     attributes: Record<string, string | number | boolean | undefined>,
     fn: () => Promise<T>
   ): Promise<T> {
+    const startedAt = Date.now();
     if (!config.SENTRY_DSN) {
       // In dev or tests without DSN, execute directly with minimal overhead
-      return await fn();
+      try {
+        return await fn();
+      } finally {
+        console.debug(`[SaySo timing] ${spanName}: ${Date.now() - startedAt}ms`);
+      }
     }
 
     return await Sentry.startSpan(

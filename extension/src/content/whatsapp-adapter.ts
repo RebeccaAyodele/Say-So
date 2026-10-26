@@ -114,6 +114,7 @@ function getActiveUnreadCount(rows: NodeListOf<Element>, contactRef: string): nu
 }
 
 function extractMessages(maxMessages = 30): { messages: ChatMessage[]; unreadCount: number } {
+  const startedAt = performance.now();
   const rows = document.querySelectorAll(SEL.messageContainer);
   const messages: ChatMessage[] = [];
 
@@ -140,6 +141,7 @@ function extractMessages(maxMessages = 30): { messages: ChatMessage[]; unreadCou
   const contactRef = contactRefFrom(contactName);
   const unreadCount = getActiveUnreadCount(rows, contactRef);
 
+  console.debug(`[SaySo timing] whatsapp context extraction: ${Math.round(performance.now() - startedAt)}ms (${messages.length} messages)`);
   return { messages, unreadCount };
 }
 

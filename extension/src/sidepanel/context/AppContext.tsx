@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, type ReactNode } from 'react';
 import type { ChatMessage, ReplyOption, GenerateRepliesResponse, ReplyCandidate } from '@sayso/shared';
 import { sendToBackground } from '../../services/messaging';
 import { formatFriendlyError } from '../../services/api-client';
@@ -151,6 +151,8 @@ export function useApp(): AppContextValue {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const generationRef = useRef(0);
+  const activeContactRef = useRef<string | null>(null);
 
   // On mount tell the service worker we're ready → get latest context & candidates
   useEffect(() => {
@@ -199,6 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           type: 'SET_CONTEXT',
           payload,
         });
+        activeContactRef.current = payload.contactRef;
 
         // Instant Auto-Predict / Auto-Summarize:
         const msgs = payload.messages;
@@ -230,6 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isGroupOverride?: boolean,
     unreadOverride?: number,
   ): Promise<void> {
+    const generation = ++generationRef.current;
     dispatch({ type: 'GENERATE_START' });
 
     const isGroup =
@@ -255,6 +259,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
       });
 
+      // A response can arrive after the user has switched chats. Never render
+      // it into the new conversation.
+      if (generation !== generationRef.current || activeContactRef.current !== contactRef) return;
       if (res.success && res.data) {
         dispatch({ type: 'GENERATE_SUCCESS', payload: res.data as GenerateRepliesResponse });
       } else {
@@ -293,17 +300,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       (c) => (c.contactName || c.contactRef.replace('wa:', '')) === contactName
     );
 
+    // Make the panel responsive while WhatsApp updates the DOM and emits the
+    // authoritative context event (which starts the actual request).
+    dispatch({ type: 'GENERATE_START' });
     await sendToBackground({
       type: 'OPEN_CHAT',
       payload: { contactName },
     }).catch(console.error);
 
-    if (candidate?.isGroup) return;
-
-    setTimeout(async () => {
-      const contactRef = candidate?.contactRef || `wa:${contactName.replace(/\s+/g, '_').toLowerCase()}`;
-      await executeGenerate(contactRef, contactName, false, 0);
-    }, 1200);
+    // Generation is triggered by the authoritative CONVERSATION_CONTEXT event
+    // from WhatsApp. Starting another delayed request here caused duplicate
+    // model calls and allowed stale replies to race the new contact.
   }
 
   async function refreshCandidates(): Promise<void> {

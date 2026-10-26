@@ -30,10 +30,15 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
     return;
   }
 
-  // Verify JWT token with Supabase JWT secret
+  // Supabase access tokens are signed JWTs. Always verify the signature and
+  // the claims; decoding alone would allow an attacker to choose any user id.
   if (config.SUPABASE_JWT_SECRET) {
     try {
-      const decoded = jwt.verify(token, config.SUPABASE_JWT_SECRET) as { sub?: string; email?: string };
+      const issuer = config.SUPABASE_URL ? `${config.SUPABASE_URL.replace(/\/$/, '')}/auth/v1` : undefined;
+      const decoded = jwt.verify(token, config.SUPABASE_JWT_SECRET, {
+        issuer,
+        audience: 'authenticated',
+      }) as { sub?: string; email?: string };
       if (!decoded.sub) {
         res.status(401).json({
           error: {
@@ -57,19 +62,6 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
       });
       return;
     }
-  }
-
-  // Fallback when Supabase JWT secret is not configured in dev
-  try {
-    const decoded = jwt.decode(token) as { sub?: string; email?: string } | null;
-    if (decoded?.sub) {
-      req.userId = decoded.sub;
-      req.userEmail = decoded.email;
-      next();
-      return;
-    }
-  } catch {
-    // ignore
   }
 
   res.status(401).json({

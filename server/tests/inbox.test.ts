@@ -10,6 +10,18 @@ describe('Inbox Route (/v1/inbox)', () => {
     vi.restoreAllMocks();
   });
 
+  it('answers extension preflight before route authentication', async () => {
+    const res = await request(app)
+      .options('/v1/inbox/sync')
+      .set('Origin', 'chrome-extension://sayso-test')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'authorization,content-type');
+
+    expect(res.status).toBe(204);
+    expect(res.headers['access-control-allow-origin']).toBe('chrome-extension://sayso-test');
+    expect(res.headers['access-control-allow-headers']).toContain('Authorization');
+  });
+
   it('POST /v1/inbox/sync synchronizes candidate metadata', async () => {
     vi.spyOn(candidateService, 'syncCandidates').mockResolvedValue({
       syncedCount: 2,

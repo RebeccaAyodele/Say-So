@@ -34,6 +34,11 @@ export async function getAuthState(): Promise<AuthState> {
     return { isAuthenticated: false, userId: null, email: null, accessToken: null };
   }
 
+  if (isTokenExpired(token)) {
+    await clearSession();
+    return { isAuthenticated: false, userId: null, email: null, accessToken: null };
+  }
+
   let userId: string | null = null;
   let email: string | null = null;
   try {
@@ -50,8 +55,10 @@ export async function getAuthState(): Promise<AuthState> {
 /** Simple JWT expiry check (epoch seconds) */
 export function isTokenExpired(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return Date.now() >= payload.exp * 1000;
+    const encodedPayload = token.split('.')[1];
+    if (!encodedPayload) return true;
+    const payload = JSON.parse(atob(encodedPayload.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp !== 'number' || Date.now() >= payload.exp * 1000;
   } catch {
     return true;
   }

@@ -14,14 +14,15 @@ import type {
   ProcessLearningEventResponse,
   ApiErrorResponse,
 } from '@sayso/shared';
+import { clearSession, getAuthState } from './auth';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'https://say-so-3m9u.onrender.com/v1';
 
 /** Retrieve the stored auth token from chrome.storage.local */
 async function getAuthToken(): Promise<string | null> {
-  const result = await chrome.storage.local.get('auth_token');
-  return result.auth_token ?? 'test_user_dev';
+  const auth = await getAuthState();
+  return auth.accessToken;
 }
 
 /** Build standard headers including Authorization if available */
@@ -37,14 +38,25 @@ async function request<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: { ...(await headers()), ...(init.headers as Record<string, string>) },
-  });
+  const startedAt = performance.now();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+      headers: { ...(await headers()), ...(init.headers as Record<string, string>) },
+    });
+  } finally {
+    clearTimeout(timeout);
+    console.debug(`[SaySo timing] api ${path}: ${Math.round(performance.now() - startedAt)}ms`);
+  }
 
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as ApiErrorResponse | null;
     const msg = body?.error?.message ?? `API ${res.status}`;
+    if (res.status === 401) await clearSession();
     throw new ApiClientError(msg, res.status, body?.error?.code);
   }
 

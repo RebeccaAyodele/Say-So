@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ReplyCard } from '../components/ReplyCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -6,6 +6,14 @@ import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 export function RepliesView() {
   const { state, dispatch, generateReplies } = useApp();
+
+  useEffect(() => {
+    if (state.isLoading || state.replyOptions.length === 0) return;
+    const frame = requestAnimationFrame(() => {
+      console.debug(`[SaySo timing] UI reply rendering: ${Math.round(performance.now())}ms mark`);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [state.isLoading, state.replyOptions]);
 
   return (
     <div className="flex flex-col gap-4">

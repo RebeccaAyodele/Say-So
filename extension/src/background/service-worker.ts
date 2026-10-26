@@ -193,6 +193,7 @@ onMessage(
         const isGroup = message.payload.isGroup ?? latestContext.isGroup;
         const unreadCount = message.payload.unreadCount ?? latestContext.unreadCount;
 
+        const startedAt = performance.now();
         api
           .generateReplies({
             contactRef: message.payload.contactRef,
@@ -206,7 +207,10 @@ onMessage(
               unreadCount,
             },
           })
-          .then((result) => sendResponse({ success: true, data: result }))
+          .then((result) => {
+            console.debug(`[SaySo timing] extension to backend + backend response: ${Math.round(performance.now() - startedAt)}ms`);
+            sendResponse({ success: true, data: result });
+          })
           .catch((err: Error) => {
             const friendly = formatFriendlyError(err);
             sendResponse({ success: false, error: friendly });

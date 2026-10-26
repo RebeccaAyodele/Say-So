@@ -3,6 +3,8 @@ import request from 'supertest';
 import express, { Response } from 'express';
 import { requireAuth, AuthenticatedRequest } from '../src/middleware/auth.js';
 import { errorHandler } from '../src/middleware/error-handler.js';
+import jwt from 'jsonwebtoken';
+import { config } from '../src/config.js';
 
 function createAuthTestApp() {
   const app = express();
@@ -57,5 +59,33 @@ describe('requireAuth Middleware', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.userId).toBe('test_user_default');
+  });
+
+  it('requires a verified Supabase JWT with the authenticated audience', async () => {
+    const originalEnv = config.NODE_ENV;
+    const originalSecret = config.SUPABASE_JWT_SECRET;
+    const originalUrl = config.SUPABASE_URL;
+    (config as Record<string, unknown>).NODE_ENV = 'production';
+    (config as Record<string, unknown>).SUPABASE_JWT_SECRET = 'test-secret';
+    (config as Record<string, unknown>).SUPABASE_URL = 'https://example.supabase.co';
+    const valid = jwt.sign(
+      { sub: 'user_1', email: 'user@example.com', aud: 'authenticated' },
+      'test-secret',
+      { issuer: 'https://example.supabase.co/auth/v1', expiresIn: '1h' },
+    );
+    try {
+      const accepted = await request(app).get('/protected').set('Authorization', `Bearer ${valid}`);
+      expect(accepted.status).toBe(200);
+
+      const wrongAudience = jwt.sign({ sub: 'user_1', aud: 'wrong' }, 'test-secret', {
+        issuer: 'https://example.supabase.co/auth/v1', expiresIn: '1h',
+      });
+      const rejected = await request(app).get('/protected').set('Authorization', `Bearer ${wrongAudience}`);
+      expect(rejected.status).toBe(401);
+    } finally {
+      (config as Record<string, unknown>).NODE_ENV = originalEnv;
+      (config as Record<string, unknown>).SUPABASE_JWT_SECRET = originalSecret;
+      (config as Record<string, unknown>).SUPABASE_URL = originalUrl;
+    }
   });
 });
