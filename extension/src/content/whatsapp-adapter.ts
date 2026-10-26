@@ -159,6 +159,30 @@ function insertReplyText(text: string): boolean {
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastForwardedRef = '';
 let lastMessageCount = 0;
+let expectedContactName: string | null = null;
+let previousContextFingerprint: string | null = null;
+let stableContextSamples = 0;
+let lastContextMutationAt = 0;
+
+function getContextFingerprint(): string | null {
+  const contactName = getActiveContactName();
+  if (!contactName || !document.querySelector(SEL.chatInput)) return null;
+  if (expectedContactName && cleanString(contactName).toLowerCase() !== expectedContactName) return null;
+
+  const rows = Array.from(document.querySelectorAll(SEL.messageContainer)).slice(-50);
+  if (rows.length === 0) return null;
+
+  const contactRef = contactRefFrom(contactName);
+  const unreadCount = getActiveUnreadCount(document.querySelectorAll(SEL.messageContainer), contactRef);
+  const isGroup = isActiveChatGroup(contactName);
+  let hash = 2166136261;
+  const content = rows.map((row) => row.textContent || '').join('\u0000');
+  for (let index = 0; index < content.length; index++) {
+    hash = Math.imul(hash ^ content.charCodeAt(index), 16777619);
+  }
+
+  return `${contactRef}:${isGroup}:${unreadCount}:${rows.length}:${hash >>> 0}`;
+}
 
 function forwardContext(): void {
   const contactName = getActiveContactName();
@@ -191,11 +215,32 @@ function forwardContext(): void {
 
 function debouncedForward(): void {
   if (debounceTimer) clearTimeout(debounceTimer);
-  const scheduledAt = performance.now();
-  debounceTimer = setTimeout(() => {
-    console.debug(`[SaySo timing] WhatsApp context settle wait: ${Math.round(performance.now() - scheduledAt)}ms`);
+  lastContextMutationAt = performance.now();
+  debounceTimer = setTimeout(checkContextStability, 150);
+}
+
+function checkContextStability(): void {
+  const fingerprint = getContextFingerprint();
+  if (!fingerprint) {
+    stableContextSamples = 0;
+    previousContextFingerprint = null;
+  } else if (fingerprint === previousContextFingerprint) {
+    stableContextSamples++;
+  } else {
+    previousContextFingerprint = fingerprint;
+    stableContextSamples = 1;
+  }
+
+  if (stableContextSamples >= 2) {
+    console.debug(`[SaySo timing] WhatsApp context stable after ${Math.round(performance.now() - lastContextMutationAt)}ms`);
+    expectedContactName = null;
+    stableContextSamples = 0;
+    previousContextFingerprint = null;
     forwardContext();
-  }, 150);
+    return;
+  }
+
+  debounceTimer = setTimeout(checkContextStability, 150);
 }
 
 function startObserving(): void {
@@ -225,6 +270,7 @@ chrome.runtime.onMessage.addListener(
 
     if (message.type === 'OPEN_CHAT') {
       const ok = openChatByContactName(message.payload.contactName);
+      if (ok) expectedContactName = cleanString(message.payload.contactName).toLowerCase();
       sendResponse(ok ? { success: true } : { success: false, error: 'Contact not found' });
       return;
     }
