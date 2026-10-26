@@ -169,6 +169,61 @@ describe('LearningService (Phase 4 Deterministic Engine)', () => {
     expect(mockProfileDoc.styleSignals[0].confidence).toBe('high');
   });
 
+  it('keeps matching style signals separate by scope and contact', async () => {
+    const existingGeneral = {
+      id: 'general_signal',
+      category: 'emoji',
+      pattern: '😊',
+      scope: 'general',
+      tendency: 'preferred',
+      confidence: 'medium',
+      evidenceCount: 2,
+      source: 'confirmed_draft_edit',
+      lastObservedAt: '2026-10-21T00:00:00.000Z',
+      overrideStatus: false,
+    };
+    const profileDoc: any = {
+      userId: 'user_test_1',
+      styleSignals: [existingGeneral],
+      save: vi.fn().mockResolvedValue({}),
+    };
+    vi.spyOn(UserProfileModel, 'findOne').mockResolvedValue(profileDoc);
+    const invalidateSpy = vi.spyOn(profileService, 'invalidateLayeredContextCache');
+
+    await learningService.applySignalsToUserProfile('user_test_1', [{
+      ...existingGeneral,
+      id: 'contact_signal',
+      scope: 'contact',
+      context: 'professor_ref',
+      confidence: 'low',
+      evidenceCount: 1,
+    } as any]);
+
+    expect(profileDoc.styleSignals).toHaveLength(2);
+    expect(profileDoc.styleSignals[0].evidenceCount).toBe(2);
+    expect(profileDoc.styleSignals[1].context).toBe('professor_ref');
+    expect(invalidateSpy).toHaveBeenCalledWith('user_test_1', 'professor_ref');
+  });
+
+  it('does not promote an emoji preference from a single low-confidence edit', async () => {
+    const findContactSpy = vi.spyOn(ContactProfileModel, 'findOne');
+    await learningService.applySignalsToContactProfile('user_test_1', 'professor_ref', [{
+      id: 'emoji_once',
+      category: 'emoji',
+      pattern: '😊',
+      scope: 'contact',
+      context: 'professor_ref',
+      tendency: 'preferred',
+      confidence: 'low',
+      evidenceCount: 1,
+      source: 'confirmed_draft_edit',
+      lastObservedAt: '2026-10-21T00:00:00.000Z',
+      overrideStatus: false,
+    }]);
+
+    expect(findContactSpy).not.toHaveBeenCalled();
+  });
+
   it('never overwrites explicit user overrides with inferred tendencies', async () => {
     const mockSave = vi.fn().mockResolvedValue({});
     const mockProfileDoc: any = {

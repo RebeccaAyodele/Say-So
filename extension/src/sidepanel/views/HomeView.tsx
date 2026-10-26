@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { PrivacyNotice } from '../components/PrivacyNotice';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { CandidateList } from '../components/CandidateList';
+import { ContactStyleSettings } from '../components/ContactStyleSettings';
 import { MessageSquarePlus, AlertCircle, Users, FileText } from 'lucide-react';
 
 export function HomeView() {
@@ -169,6 +170,10 @@ export function HomeView() {
             ))}
           </div>
         </div>
+      )}
+
+      {!state.isGroup && state.contactRef && state.contactName && (
+        <ContactStyleSettings key={state.contactRef} contactRef={state.contactRef} contactName={state.contactName} />
       )}
 
       {/* Privacy notice */}

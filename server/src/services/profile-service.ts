@@ -37,8 +37,18 @@ export class ProfileService {
       { $set: updates },
       { new: true, upsert: true }
     );
-    for (const key of this.layeredContextCache.keys()) if (key.startsWith(`${userId}:`)) this.layeredContextCache.delete(key);
+    this.invalidateLayeredContextCache(userId);
     return updated.toObject() as unknown as UserStyleProfile;
+  }
+
+  invalidateLayeredContextCache(userId: string, contactRef?: string): void {
+    if (contactRef) {
+      this.layeredContextCache.delete(`${userId}:${contactRef}`);
+      return;
+    }
+    for (const key of this.layeredContextCache.keys()) {
+      if (key.startsWith(`${userId}:`)) this.layeredContextCache.delete(key);
+    }
   }
 
   async getContactProfile(
@@ -76,6 +86,7 @@ export class ProfileService {
         userOverrides: data.userOverrides || {},
         schemaVersion: 1,
       });
+      this.invalidateLayeredContextCache(userId, contactRef);
       return created.toObject() as unknown as ContactProfile;
     }
 
@@ -97,13 +108,13 @@ export class ProfileService {
     }
 
     const saved = await existing.save();
-    this.layeredContextCache.delete(`${userId}:${contactRef}`);
+    this.invalidateLayeredContextCache(userId, contactRef);
     return saved.toObject() as unknown as ContactProfile;
   }
 
   async deleteContactProfile(userId: string, contactRef: string): Promise<boolean> {
     const result = await ContactProfileModel.deleteOne({ userId, contactRef });
-    this.layeredContextCache.delete(`${userId}:${contactRef}`);
+    this.invalidateLayeredContextCache(userId, contactRef);
     return result.deletedCount > 0;
   }
 
@@ -115,10 +126,13 @@ export class ProfileService {
     contactRef: string
   ): Promise<{
     generalStyleSummary: string[];
+    contactStyleSummary: string[];
     contactFormality: string;
     contactGreetings: string[];
     contactCommonPhrases: string[];
     contactEmojiPreference: string;
+    preferredTone?: string;
+    languagePreference?: string;
     relationship?: string;
   }> {
     const cacheKey = `${userId}:${contactRef}`;
@@ -130,23 +144,46 @@ export class ProfileService {
       this.getContactProfile(userId, contactRef),
     ]);
 
-    // Filter relevant high & medium confidence general signals
-    const generalStyleSummary = (userProfile.styleSignals || [])
-      .filter((s) => s.confidence !== 'low' && !s.overrideStatus)
+    const relevantSignals = (userProfile.styleSignals || [])
+      .filter((s) => s.confidence !== 'low' && !s.overrideStatus);
+    const generalStyleSummary = relevantSignals
+      .filter((signal) => signal.scope === 'general')
+      .sort((left, right) => (right.lastObservedAt || '').localeCompare(left.lastObservedAt || ''))
+      .slice(0, 12)
       .map((s) => `${s.category}: ${s.pattern} (${s.tendency})`);
+    const contactSignals = relevantSignals.filter(
+      (signal) => signal.scope === 'contact' && signal.context === contactRef,
+    ).sort((left, right) => (right.lastObservedAt || '').localeCompare(left.lastObservedAt || '')).slice(0, 12);
+    const contactStyleSummary = contactSignals.map(
+      (signal) => `${signal.category}: ${signal.pattern} (${signal.tendency}, ${signal.confidence} confidence)`,
+    );
 
     const contactFormality = contactProfile?.contactStyle?.formality || 'casual';
-    const contactGreetings = contactProfile?.userToContactStyle?.greetings || [];
-    const contactCommonPhrases = contactProfile?.userToContactStyle?.commonPhrases || [];
-    const contactEmojiPreference = contactProfile?.userToContactStyle?.emojiPreference || 'minimal';
+    const contactGreetings = (contactProfile?.userToContactStyle?.greetings || []).slice(0, 6);
+    const contactCommonPhrases = (contactProfile?.userToContactStyle?.commonPhrases || []).slice(0, 8);
+    const learnedEmojiSignal = contactSignals
+      .filter((signal) => signal.category === 'emoji')
+      .sort((left, right) => (right.lastObservedAt || '').localeCompare(left.lastObservedAt || ''))[0];
+    const contactEmojiPreference = contactProfile?.profileMode === 'custom'
+      ? contactProfile.userToContactStyle?.emojiPreference || 'minimal'
+      : learnedEmojiSignal?.tendency === 'avoided'
+        ? 'none'
+        : learnedEmojiSignal?.tendency === 'preferred' && learnedEmojiSignal.confidence === 'high'
+          ? 'frequent'
+          : 'minimal';
+    const preferredTone = contactProfile?.contactStyle?.preferredTone;
+    const languagePreference = contactProfile?.userToContactStyle?.languagePreference;
     const relationship = contactProfile?.contactStyle?.relationship;
 
     const value = {
       generalStyleSummary,
+      contactStyleSummary,
       contactFormality,
       contactGreetings,
       contactCommonPhrases,
       contactEmojiPreference,
+      preferredTone,
+      languagePreference,
       relationship,
     };
     this.layeredContextCache.set(cacheKey, { value, expiresAt: Date.now() + 30_000 });

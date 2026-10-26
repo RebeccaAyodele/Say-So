@@ -20,7 +20,7 @@ export const StyleSignalSchema = z.object({
   category: SignalCategorySchema,
   pattern: z.string().min(1).max(200),
   scope: SignalScopeSchema,
-  context: z.string().max(200).optional(),
+  context: z.string().max(256).optional(),
   tendency: SignalTendencySchema,
   confidence: SignalConfidenceSchema,
   evidenceCount: z.number().int().min(1),

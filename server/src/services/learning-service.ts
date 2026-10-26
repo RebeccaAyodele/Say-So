@@ -127,7 +127,15 @@ export class LearningService {
 
     // 6. Update Contact-Specific Profile if contactRef is provided
     if (contactRef) {
-      await this.applySignalsToContactProfile(userId, contactRef, candidateSignals);
+      const confirmedSignals = candidateSignals.map(
+        (candidate) => updatedSignals.find((signal) =>
+          signal.category === candidate.category &&
+          signal.pattern === candidate.pattern &&
+          signal.scope === candidate.scope &&
+          (signal.context || '') === (candidate.context || ''),
+        ) || candidate,
+      );
+      await this.applySignalsToContactProfile(userId, contactRef, confirmedSignals);
     }
 
     // 7. Record Processed Event Idempotently in MongoDB
@@ -290,6 +298,9 @@ export class LearningService {
       });
     }
 
+    if (contactRef) {
+      for (const signal of signals) signal.context = contactRef;
+    }
     return signals;
   }
 
@@ -324,7 +335,11 @@ export class LearningService {
 
     for (const candidate of newSignals) {
       const matchIndex = existingSignals.findIndex(
-        (s) => s.category === candidate.category && s.pattern === candidate.pattern
+        (signal) =>
+          signal.category === candidate.category &&
+          signal.pattern === candidate.pattern &&
+          signal.scope === candidate.scope &&
+          (signal.context || '') === (candidate.context || ''),
       );
 
       if (matchIndex >= 0) {
@@ -360,6 +375,13 @@ export class LearningService {
 
     profile.styleSignals = existingSignals;
     await profile.save();
+    if (newSignals.some((signal) => signal.scope === 'general')) {
+      profileService.invalidateLayeredContextCache(userId);
+    } else {
+      for (const contactRef of new Set(newSignals.map((signal) => signal.context).filter(Boolean))) {
+        profileService.invalidateLayeredContextCache(userId, contactRef);
+      }
+    }
     return existingSignals;
   }
 
@@ -371,10 +393,13 @@ export class LearningService {
     contactRef: string,
     signals: StyleSignal[]
   ): Promise<void> {
+    const confirmedSignals = signals.filter((signal) => signal.confidence !== 'low');
+    if (confirmedSignals.length === 0) return;
+
     const contactProfile = await ContactProfileModel.findOne({ userId, contactRef });
     if (!contactProfile) return;
 
-    for (const signal of signals) {
+    for (const signal of confirmedSignals) {
       if (signal.category === 'greetings' && signal.tendency === 'preferred') {
         const greetings = contactProfile.userToContactStyle?.greetings || [];
         if (!greetings.includes(signal.pattern)) {
@@ -391,13 +416,10 @@ export class LearningService {
         }
       }
 
-      if (signal.category === 'emoji') {
-        contactProfile.userToContactStyle.emojiPreference =
-          signal.tendency === 'preferred' ? 'frequent' : 'none';
-      }
     }
 
     await contactProfile.save();
+    profileService.invalidateLayeredContextCache(userId, contactRef);
   }
 
   /**
