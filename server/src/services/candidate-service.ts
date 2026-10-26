@@ -28,6 +28,7 @@ export class CandidateService {
           status: initialStatus,
           lastMessageDirection: item.lastMessageDirection,
           lastMessageTimestamp: item.lastMessageTimestamp,
+          listPosition: item.listPosition,
           unreadCount: item.unreadCount || 0,
           isGroup: item.isGroup ?? false,
         });
@@ -38,6 +39,7 @@ export class CandidateService {
         existing.contactName = item.contactName || existing.contactName;
         existing.lastMessageDirection = item.lastMessageDirection;
         existing.lastMessageTimestamp = item.lastMessageTimestamp;
+        existing.listPosition = item.listPosition ?? existing.listPosition;
         existing.unreadCount = item.unreadCount ?? existing.unreadCount;
         existing.isGroup = item.isGroup ?? existing.isGroup;
 

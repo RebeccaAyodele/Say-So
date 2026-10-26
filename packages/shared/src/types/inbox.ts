@@ -8,6 +8,7 @@ export interface ReplyCandidate {
   status: CandidateStatus;
   lastMessageDirection: 'incoming' | 'outgoing';
   lastMessageTimestamp?: string;
+  listPosition?: number;
   unreadCount?: number;
   isGroup?: boolean;
   dismissedAt?: string;
@@ -20,6 +21,7 @@ export interface CandidateSyncItem {
   revision: string;
   lastMessageDirection: 'incoming' | 'outgoing';
   lastMessageTimestamp?: string;
+  listPosition?: number;
   unreadCount?: number;
   isGroup?: boolean;
 }

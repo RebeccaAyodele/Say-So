@@ -161,6 +161,7 @@ export function detectCandidates(): CandidateSyncItem[] {
         revision,
         lastMessageDirection,
         lastMessageTimestamp,
+        listPosition: i,
         unreadCount,
         isGroup,
       });
@@ -216,7 +217,9 @@ let scanDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 function scanAndSync(): void {
   const candidates = detectCandidates();
 
-  const currentHash = candidates.length === 0 ? '__empty__' : candidates.map((c) => c.revision).join('|');
+  const currentHash = candidates.length === 0
+    ? '__empty__'
+    : candidates.map((c) => `${c.revision}:${c.listPosition ?? ''}`).join('|');
   if (currentHash === lastSyncHash) return;
 
   lastSyncHash = currentHash;

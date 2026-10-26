@@ -24,6 +24,7 @@ const ReplyCandidateSchema = new Schema<ReplyCandidateDocument>(
       required: true,
     },
     lastMessageTimestamp: { type: String },
+    listPosition: { type: Number },
     unreadCount: { type: Number, default: 0 },
     isGroup: { type: Boolean, default: false },
     dismissedAt: { type: String },

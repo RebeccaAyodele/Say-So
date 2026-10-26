@@ -80,10 +80,7 @@ function reducer(state: AppState, action: Action): AppState {
     }
     case 'SET_CANDIDATES': {
       const sorted = [...action.payload].sort((a, b) => {
-        const timeA = a.lastMessageTimestamp || '';
-        const timeB = b.lastMessageTimestamp || '';
-        if (timeA === timeB) return 0;
-        return timeB > timeA ? 1 : -1;
+        return (a.listPosition ?? Number.MAX_SAFE_INTEGER) - (b.listPosition ?? Number.MAX_SAFE_INTEGER);
       });
       return {
         ...state,
@@ -153,6 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const generationRef = useRef(0);
   const activeContactRef = useRef<string | null>(null);
+  const pendingContactSwitchRef = useRef(false);
 
   // On mount tell the service worker we're ready → get latest context & candidates
   useEffect(() => {
@@ -165,10 +163,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           };
 
           if (data.context) {
-            dispatch({
-              type: 'SET_CONTEXT',
-              payload: data.context,
-            });
+            if (!pendingContactSwitchRef.current && activeContactRef.current === null) {
+              activeContactRef.current = data.context.contactRef;
+              dispatch({ type: 'SET_CONTEXT', payload: data.context });
+            }
           }
 
           if (data.candidates) {
@@ -201,7 +199,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           type: 'SET_CONTEXT',
           payload,
         });
+        if (activeContactRef.current !== payload.contactRef) {
+          generationRef.current++;
+        }
         activeContactRef.current = payload.contactRef;
+        pendingContactSwitchRef.current = false;
 
         // Instant Auto-Predict / Auto-Summarize:
         const msgs = payload.messages;
@@ -271,7 +273,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'GENERATE_ERROR', payload: formatFriendlyError(rawErr) });
       }
     } catch (err) {
-      dispatch({ type: 'GENERATE_ERROR', payload: formatFriendlyError(err) });
+      if (generation === generationRef.current && activeContactRef.current === contactRef) {
+        dispatch({ type: 'GENERATE_ERROR', payload: formatFriendlyError(err) });
+      }
     }
   }
 
@@ -301,6 +305,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const candidate = state.candidates.find(
       (c) => (c.contactName || c.contactRef.replace('wa:', '')) === contactName
     );
+
+    generationRef.current++;
+    activeContactRef.current = candidate?.contactRef ?? null;
+    pendingContactSwitchRef.current = true;
 
     // Make the panel responsive while WhatsApp updates the DOM and emits the
     // authoritative context event (which starts the actual request).

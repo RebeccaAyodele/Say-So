@@ -116,6 +116,7 @@ onMessage(
               status: 'active' as const,
               lastMessageDirection: c.lastMessageDirection,
               lastMessageTimestamp: c.lastMessageTimestamp,
+              listPosition: c.listPosition,
               unreadCount: c.unreadCount,
               isGroup: c.isGroup,
               updatedAt: new Date().toISOString(),
