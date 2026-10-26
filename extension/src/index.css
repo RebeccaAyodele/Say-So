@@ -4,18 +4,18 @@
 
 @layer base {
   body {
-    @apply bg-surface-base text-gray-100 font-sans antialiased selection:bg-brand-500 selection:text-white;
+    @apply bg-surface-base text-gray-100 font-sans antialiased selection:bg-brand-700 selection:text-white;
   }
 }
 
 .auth-input {
   color: #f9fafb !important;
-  caret-color: #6ee7b7;
+  caret-color: theme('colors.brand.300');
   -webkit-text-fill-color: #f9fafb;
 }
 
 .auth-input::placeholder {
-  color: #9ca3af;
+  color: theme('colors.gray.400');
   opacity: 1;
 }
 
@@ -24,32 +24,14 @@
 .auth-input:-webkit-autofill:hover,
 .auth-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #f9fafb;
-  -webkit-box-shadow: 0 0 0 1000px #0d1117 inset;
+  -webkit-box-shadow: 0 0 0 1000px theme('colors.surface.base') inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 
-/* Custom Glassmorphism & UI Accents */
-.glass-panel {
-  background: rgba(22, 27, 34, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-panel-hover {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-panel-hover:hover {
-  background: rgba(28, 33, 41, 0.85);
-  border-color: rgba(16, 185, 129, 0.3);
-  transform: translateY(-1px);
-}
-
-.glass-card-active {
-  background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.6);
-  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.25);
+@layer components {
+  .panel { @apply rounded-xl border border-surface-border bg-surface-card; }
+  .panel-hover { @apply transition-colors hover:border-gray-600 hover:bg-surface-cardHover; }
+  .button-primary { @apply rounded-lg bg-brand-700 text-white transition-colors hover:bg-brand-600 disabled:pointer-events-none disabled:opacity-50; }
 }
 
 /* Custom smooth scrollbar */
@@ -63,10 +45,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: #465049;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #626e65;
 }

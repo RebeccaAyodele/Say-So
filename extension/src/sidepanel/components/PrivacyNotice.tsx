@@ -3,7 +3,7 @@ import { Shield, Eye, Cpu, Trash2 } from 'lucide-react';
 
 export function PrivacyNotice() {
   return (
-    <div className="glass-panel rounded-xl p-4 border border-surface-border space-y-3">
+    <div className="panel space-y-3 p-4">
       <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
         <Shield size={14} className="text-brand-400" />
         Privacy First

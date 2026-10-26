@@ -50,7 +50,6 @@ export function DraftEditor() {
           requestId: state.requestId,
           optionId: state.selectedOption.id,
           feedbackType: 'inserted',
-          confirmedDraft: text,
           contactRef: state.contactRef ?? undefined,
         });
       } catch {
@@ -95,7 +94,7 @@ export function DraftEditor() {
       </div>
 
       {/* Textarea */}
-      <div className="flex-1 glass-panel rounded-xl p-3 border border-surface-border focus-within:border-brand-500/40 transition-colors">
+      <div className="panel flex-1 p-3 transition-colors focus-within:border-brand-500/60">
         <textarea
           ref={textareaRef}
           value={state.draftText}
@@ -114,7 +113,7 @@ export function DraftEditor() {
         <button
           onClick={handleSend}
           disabled={!state.draftText.trim()}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white text-sm font-semibold shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all"
+          className="button-primary flex items-center gap-2 px-4 py-2 text-sm font-semibold active:scale-[0.98]"
           aria-label="Send reply"
         >
           <Send size={15} />

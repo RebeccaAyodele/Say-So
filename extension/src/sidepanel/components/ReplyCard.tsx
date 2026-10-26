@@ -8,15 +8,6 @@ interface ReplyCardProps {
   index: number;
 }
 
-const STYLE_COLORS: Record<string, string> = {
-  brief: 'from-sky-500/20 to-sky-600/10 border-sky-500/30',
-  warm: 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
-  direct: 'from-violet-500/20 to-violet-600/10 border-violet-500/30',
-  quick_summary: 'from-indigo-500/20 to-indigo-600/10 border-indigo-500/30',
-  key_takeaways: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
-  action_items: 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
-};
-
 const STYLE_LABELS: Record<string, string> = {
   brief: 'Brief',
   warm: 'Warm',
@@ -30,7 +21,6 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
   const { state, dispatch, insertReply } = useApp();
   const [copiedIndex, setCopiedIndex] = useState<number | 'all' | null>(null);
 
-  const gradient = STYLE_COLORS[option.style] ?? STYLE_COLORS.brief;
   const label = STYLE_LABELS[option.style] ?? option.style;
 
   // Split lines if structured as numbered points (e.g. "1. ... \n 2. ...")
@@ -54,10 +44,7 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
   return (
     <div
       className={`
-        glass-panel glass-panel-hover rounded-xl p-4
-        bg-gradient-to-br ${gradient}
-        border cursor-pointer
-        animate-in fade-in-0 slide-in-from-bottom-2
+        panel panel-hover rounded-xl p-4 cursor-pointer
       `}
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
       onClick={handleSelect}
@@ -76,7 +63,7 @@ export function ReplyCard({ option, index }: ReplyCardProps) {
               {rawLines.length} points
             </span>
           )}
-          <Sparkles size={14} className="text-brand-400 opacity-60" />
+          <Sparkles size={14} className="text-gray-500" />
         </div>
       </div>
 

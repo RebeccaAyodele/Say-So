@@ -6,13 +6,13 @@ export function Header() {
   const { state, dispatch } = useApp();
 
   return (
-    <header className="glass-panel flex items-center justify-between px-4 py-3 border-b border-surface-border">
+    <header className="flex items-center justify-between border-b border-surface-border bg-surface-card px-4 py-3">
       {/* Brand */}
       <button
         onClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}
         className="flex items-center gap-2 group"
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-shadow">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-700">
           <MessageCircle size={16} className="text-white" />
         </div>
         <span className="text-sm font-bold tracking-tight">
@@ -24,7 +24,7 @@ export function Header() {
       {state.contactName && (
         <div className="flex-1 mx-3 flex justify-center">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-300 bg-surface-card px-3 py-1 rounded-full border border-surface-border truncate max-w-[170px]">
-            <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-brand-400" />
             {state.contactName}
           </span>
         </div>

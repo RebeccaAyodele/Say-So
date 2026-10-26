@@ -60,7 +60,7 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-surface-border bg-surface-card p-5 shadow-xl">
+    <form onSubmit={handleSubmit} className="panel flex w-full max-w-sm flex-col gap-4 p-5">
       <div>
         <h2 className="text-sm font-bold text-white">{mode === 'signIn' ? 'Sign in to SaySo' : 'Create your SaySo account'}</h2>
         <p className="mt-1 text-[11px] leading-relaxed text-gray-400">Use your SaySo account to generate replies.</p>

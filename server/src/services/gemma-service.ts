@@ -240,8 +240,8 @@ export class GemmaService {
       ].join('\n');
     }
 
-    // 3. Format the recent messages for prompt (bound to last 20 messages)
-    const boundedMessages = allContextMessages.slice(-20);
+    // 3. Format the recent messages for prompt (bounded to keep latency and prompt size predictable)
+    const boundedMessages = allContextMessages.slice(-40);
     const formattedMessages = boundedMessages
       .map((m) => {
         const isFromMe = m.role === 'me';

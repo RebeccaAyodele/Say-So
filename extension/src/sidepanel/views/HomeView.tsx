@@ -26,8 +26,8 @@ export function HomeView() {
       <div className="text-center py-5">
         <div className={`w-14 h-14 mx-auto mb-3.5 rounded-2xl flex items-center justify-center border ${
           state.isGroup
-            ? 'bg-gradient-to-br from-purple-500/20 to-purple-700/20 border-purple-500/30 text-purple-400'
-            : 'bg-gradient-to-br from-brand-400/20 to-brand-600/20 border-brand-500/20 text-brand-400'
+            ? 'bg-surface-card border-surface-border text-purple-300'
+            : 'bg-surface-card border-surface-border text-brand-300'
         }`}>
           {state.isGroup ? <Users size={26} /> : <MessageSquarePlus size={26} />}
         </div>
@@ -85,7 +85,7 @@ export function HomeView() {
 
       {/* Reply Mode Selector (Combined vs Point-by-point, Direct chats only) */}
       {!state.isGroup && hasContext && (
-        <div className="glass-card rounded-xl p-2.5 border border-surface-border flex flex-col gap-1.5">
+        <div className="panel rounded-lg p-2.5 flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs px-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
               Reply Style
@@ -102,7 +102,7 @@ export function HomeView() {
               onClick={() => setReplyMode('all_at_once')}
               className={`py-1.5 px-2 rounded-md font-medium text-[11px] transition-all flex items-center justify-center gap-1.5 ${
                 state.replyMode === 'all_at_once'
-                  ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30'
+                  ? 'bg-brand-700 text-white'
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -113,7 +113,7 @@ export function HomeView() {
               onClick={() => setReplyMode('point_by_point')}
               className={`py-1.5 px-2 rounded-md font-medium text-[11px] transition-all flex items-center justify-center gap-1.5 ${
                 state.replyMode === 'point_by_point'
-                  ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30'
+                  ? 'bg-brand-700 text-white'
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -128,15 +128,13 @@ export function HomeView() {
         <button
           onClick={generateReplies}
           disabled={state.isLoading}
-          className={`relative w-full py-3.5 rounded-xl text-white text-sm font-bold shadow-lg hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none transition-all overflow-hidden group ${
+          className={`w-full py-3.5 rounded-lg text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none ${
             state.isGroup
-              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-purple-500/25 hover:shadow-purple-500/40'
-              : 'bg-gradient-to-r from-brand-500 to-brand-600 shadow-brand-500/25 hover:shadow-brand-500/40'
+              ? 'bg-purple-800 hover:bg-purple-700'
+              : 'bg-brand-700 hover:bg-brand-600'
           }`}
         >
-          {/* Shimmer overlay */}
-          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-          <span className="relative flex items-center justify-center gap-2">
+          <span className="flex items-center justify-center gap-2">
             {state.isGroup ? <FileText size={16} /> : <Zap size={16} />}
             {state.isGroup ? 'Summarize Unread Messages' : 'Generate Smart Replies'}
           </span>
@@ -156,7 +154,7 @@ export function HomeView() {
 
       {/* Context preview */}
       {hasContext && (
-        <div className="glass-panel rounded-xl p-3 border border-surface-border">
+        <div className="panel p-3">
           <h3 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
             Latest Messages
           </h3>

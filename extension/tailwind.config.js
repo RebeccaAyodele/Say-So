@@ -17,13 +17,14 @@ export default {
           900: '#064e3b',
         },
         surface: {
-          base: '#0d1117',
-          card: '#161b22',
-          cardHover: '#1c2129',
-          border: 'rgba(255, 255, 255, 0.08)',
-          borderActive: 'rgba(16, 185, 129, 0.4)',
+          base: '#111412',
+          card: '#191e1a',
+          cardHover: '#222923',
+          border: '#303832',
+          borderActive: '#52715b',
         },
       },
+      fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
       keyframes: {
         'fade-in': {
           from: { opacity: '0' },

@@ -10,7 +10,7 @@ export function SidePanelApp() {
   const { state } = useApp();
 
   return (
-    <div className="flex flex-col h-screen bg-surface-base text-gray-100 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="flex flex-col h-screen bg-surface-base text-gray-100 font-sans">
       <Header />
 
       <main className="flex-1 overflow-y-auto px-3 py-4">

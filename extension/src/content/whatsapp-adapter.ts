@@ -113,7 +113,7 @@ function getActiveUnreadCount(rows: NodeListOf<Element>, contactRef: string): nu
   return 0;
 }
 
-function extractMessages(maxMessages = 30): { messages: ChatMessage[]; unreadCount: number } {
+function extractMessages(maxMessages = 50): { messages: ChatMessage[]; unreadCount: number } {
   const startedAt = performance.now();
   const rows = document.querySelectorAll(SEL.messageContainer);
   const messages: ChatMessage[] = [];

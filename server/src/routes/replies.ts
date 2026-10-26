@@ -4,7 +4,6 @@ import { createRateLimiter } from '../middleware/rate-limit.js';
 import { config } from '../config.js';
 import { gemmaService } from '../services/gemma-service.js';
 import { learningService } from '../services/learning-service.js';
-import { LearningEventModel } from '../db/models/index.js';
 import {
   GenerateRepliesRequestSchema,
   RecordFeedbackRequestSchema,
@@ -49,26 +48,10 @@ repliesRouter.post('/feedback', async (req: AuthenticatedRequest, res: Response,
 
     const eventId = `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    // If confirmed draft text is attached, process deterministic style learning
-    let learningResult;
-    if (validatedData.confirmedDraft) {
-      learningResult = await learningService.processConfirmedDraftEdit(userId, {
-        eventId,
-        contactRef: validatedData.contactRef,
-        originalOption: {
-          id: validatedData.optionId,
-          style: 'selected',
-          text: validatedData.optionId, // fallback text or identifier
-        },
-        confirmedDraft: validatedData.confirmedDraft,
-      });
-    }
-
     res.status(200).json({
       success: true,
       eventId,
       recordedAt: new Date().toISOString(),
-      learningResult,
     });
   } catch (err) {
     next(err);

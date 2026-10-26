@@ -117,7 +117,7 @@ describe('Replies Route (/v1/replies)', () => {
     expect(res.body.eventId).toBeDefined();
   });
 
-  it('POST /v1/replies/feedback delegates confirmed draft edits to learning engine', async () => {
+  it('POST /v1/replies/feedback records insertion without duplicating learning', async () => {
     const learnSpy = vi.spyOn(learningService, 'processConfirmedDraftEdit').mockResolvedValue({
       eventId: 'evt_learn_1',
       signalsIdentified: 1,
@@ -138,12 +138,7 @@ describe('Replies Route (/v1/replies)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(learnSpy).toHaveBeenCalledWith(
-      'test_user_1',
-      expect.objectContaining({
-        confirmedDraft: 'No wahala bro, will get back to you shortly!',
-      })
-    );
+    expect(learnSpy).not.toHaveBeenCalled();
   });
 
   it('POST /v1/replies/confirm-draft directly processes draft edits', async () => {
