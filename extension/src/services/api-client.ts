@@ -39,28 +39,39 @@ async function request<T>(
   init: RequestInit = {},
 ): Promise<T> {
   const startedAt = performance.now();
+  const routeName = path === '/replies/generate'
+    ? 'replies.generate'
+    : path.startsWith('/contacts/') && path.endsWith('/profile')
+      ? 'contacts.profile'
+      : path.startsWith('/inbox/')
+        ? 'inbox'
+        : path.startsWith('/preferences')
+          ? 'preferences'
+          : 'api.request';
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
-  let res: Response;
+  let backendTime = 'unavailable';
   try {
-    res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       signal: init.signal ?? controller.signal,
       headers: { ...(await headers()), ...(init.headers as Record<string, string>) },
     });
+
+    backendTime = res.headers.get('X-Request-Time') ?? backendTime;
+
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as ApiErrorResponse | null;
+      const msg = body?.error?.message ?? `API ${res.status}`;
+      if (res.status === 401) await clearSession();
+      throw new ApiClientError(msg, res.status, body?.error?.code);
+    }
+
+    return await res.json() as T;
   } finally {
     clearTimeout(timeout);
-    console.debug(`[SaySo timing] api ${path}: ${Math.round(performance.now() - startedAt)}ms`);
+    console.debug(`[SaySo timing] ${routeName}: total ${Math.round(performance.now() - startedAt)}ms; backend ${backendTime}`);
   }
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-    const msg = body?.error?.message ?? `API ${res.status}`;
-    if (res.status === 401) await clearSession();
-    throw new ApiClientError(msg, res.status, body?.error?.code);
-  }
-
-  return res.json() as Promise<T>;
 }
 
 // ─── Custom Error & Friendly Formatter ──────────────────────────────

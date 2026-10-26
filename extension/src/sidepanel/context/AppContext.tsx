@@ -234,6 +234,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     unreadOverride?: number,
   ): Promise<void> {
     const generation = ++generationRef.current;
+    performance.clearMarks('sayso-generation-start');
+    performance.mark('sayso-generation-start');
     dispatch({ type: 'GENERATE_START' });
 
     const isGroup =

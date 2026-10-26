@@ -10,7 +10,11 @@ export function RepliesView() {
   useEffect(() => {
     if (state.isLoading || state.replyOptions.length === 0) return;
     const frame = requestAnimationFrame(() => {
-      console.debug(`[SaySo timing] UI reply rendering: ${Math.round(performance.now())}ms mark`);
+      const startedAt = performance.getEntriesByName('sayso-generation-start').at(-1)?.startTime;
+      if (startedAt !== undefined) {
+        console.debug(`[SaySo timing] generation to UI render: ${Math.round(performance.now() - startedAt)}ms`);
+        performance.clearMarks('sayso-generation-start');
+      }
     });
     return () => cancelAnimationFrame(frame);
   }, [state.isLoading, state.replyOptions]);

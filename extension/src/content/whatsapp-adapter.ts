@@ -191,7 +191,11 @@ function forwardContext(): void {
 
 function debouncedForward(): void {
   if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(forwardContext, 400);
+  const scheduledAt = performance.now();
+  debounceTimer = setTimeout(() => {
+    console.debug(`[SaySo timing] WhatsApp context settle wait: ${Math.round(performance.now() - scheduledAt)}ms`);
+    forwardContext();
+  }, 150);
 }
 
 function startObserving(): void {
