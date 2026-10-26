@@ -152,7 +152,7 @@ export function HomeView() {
             Latest Messages
           </h3>
           <div className="space-y-1.5 max-h-[180px] overflow-y-auto">
-            {state.messages.slice(-6).map((msg, i) => (
+            {state.messages.slice(-6).reverse().map((msg, i) => (
               <div
                 key={i}
                 className={`text-xs leading-relaxed px-2.5 py-1.5 rounded-lg ${
