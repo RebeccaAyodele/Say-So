@@ -95,6 +95,22 @@ describe('LearningService (Phase 4 Deterministic Engine)', () => {
     expect(slangSig?.tendency).toBe('preferred');
   });
 
+  it('learns contact-specific forms of address such as ma and sir', () => {
+    const signals = learningService.extractStyleSignals(
+      'I will send it shortly.',
+      'I will send it shortly, ma.',
+      'professor_contact',
+    );
+
+    const addressSignal = signals.find((signal) => signal.category === 'vocabulary');
+    expect(addressSignal).toMatchObject({
+      pattern: 'address:ma',
+      scope: 'contact',
+      context: 'professor_contact',
+      tendency: 'preferred',
+    });
+  });
+
   it('detects conciseness when user significantly shortens the draft', () => {
     const orig = 'I was just wondering if you might perhaps have a moment to talk about the project today.';
     const conf = 'Are you free today?';

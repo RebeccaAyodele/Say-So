@@ -113,6 +113,35 @@ describe('GemmaService Unit Tests', () => {
     expect(userPrompt).toContain('Do not use emojis in any option');
   });
 
+  it('preserves the user's contact-specific forms of address and demonstrated emoji use', () => {
+    const req: GenerateRepliesRequest = {
+      contactRef: 'friend_contact',
+      context: {
+        activeContactName: 'Ada',
+        messages: [
+          { role: 'me', text: 'Aww thank you 😂' },
+          { role: 'them', text: 'That was so funny' },
+          { role: 'me', text: 'I know 😂😂' },
+          { role: 'them', text: 'How are you?' },
+          { role: 'me', text: 'I am good ma, how are you? 😂' },
+          { role: 'them', text: 'I am good too' },
+        ],
+      },
+    };
+    const { userPrompt } = gemmaService.assemblePrompt(req, {
+      generalStyleSummary: [],
+      contactStyleSummary: [],
+      contactFormality: 'casual',
+      contactGreetings: [],
+      contactCommonPhrases: [],
+      contactEmojiPreference: 'minimal',
+    });
+
+    expect(userPrompt).toContain('Forms of address the user uses for this contact: ["ma"]');
+    expect(userPrompt).toContain('At least two options should reflect that usage');
+    expect(userPrompt).toContain('examples: 😂');
+  });
+
   it('rejects a conversation with no unanswered incoming message', () => {
     const req: GenerateRepliesRequest = {
       contactRef: 'contact_answered',

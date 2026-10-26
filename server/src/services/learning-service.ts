@@ -245,6 +245,24 @@ export class LearningService {
       }
     }
 
+    for (const form of ['ma', 'sir', 'madam', 'aunty', 'uncle']) {
+      const formRegex = new RegExp(`\\b${form}\\b`, 'i');
+      if (formRegex.test(confirmedText) && !formRegex.test(originalText)) {
+        signals.push({
+          id: `sig_${randomUUID().substring(0, 8)}`,
+          category: 'vocabulary',
+          pattern: `address:${form}`,
+          scope,
+          tendency: 'preferred',
+          confidence: 'low',
+          evidenceCount: 1,
+          source: 'confirmed_draft_edit',
+          lastObservedAt: now,
+          overrideStatus: false,
+        });
+      }
+    }
+
     // --- D. Sentence Length & Conciseness ---
     const origWordCount = originalText.split(/\s+/).filter(Boolean).length;
     const confWordCount = confirmedText.split(/\s+/).filter(Boolean).length;

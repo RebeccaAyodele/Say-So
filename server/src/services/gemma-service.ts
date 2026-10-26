@@ -163,15 +163,7 @@ export class GemmaService {
     // 1. Full context analysis to understand User's voice with this person
     const allContextMessages = req.context.messages || [];
     const myPastMessages = allContextMessages.filter((m) => m.role === 'me');
-    const myCombinedText = myPastMessages.map((m) => m.text).join(' ');
-
-    // Emoji preference is based on this user's messages, never the recipient's emoji use.
-    const myEmojis = myCombinedText.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu) || [];
-    const uniqueMyEmojis = [...new Set(myEmojis)];
-    const outgoingEmojiMessages = myPastMessages.filter((message) =>
-      /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(message.text),
-    ).length;
-
+    const recentOutgoing = myPastMessages.slice(-5);
     // Check if user usually writes in lowercase (casual texting)
     const lowerCount = myPastMessages.filter((m) => /^[a-z]/.test(m.text.trim())).length;
     const isUserPrimarilyLowercase = myPastMessages.length > 0 && (lowerCount / myPastMessages.length) >= 0.5;
@@ -208,13 +200,21 @@ export class GemmaService {
     const boundedText = (text: string) =>
       text.length > 800 ? `${text.slice(0, 300)} … [message truncated] … ${text.slice(-450)}` : text;
 
-    const recentOutgoing = myPastMessages.slice(-3);
     const learnedEmojiSignal = layeredStyle.contactStyleSummary.find(
       (signal) => signal.startsWith('emoji:') && signal.includes('(preferred,'),
     );
     const learnedContactEmoji = learnedEmojiSignal?.match(/^emoji: (.*?) \(/)?.[1];
     const learnedContactEmojiPreference = Boolean(learnedEmojiSignal);
-    const observedEmojis = [...new Set([...uniqueMyEmojis, ...(learnedContactEmoji ? [learnedContactEmoji] : [])])];
+    const recentOutgoingEmojis = [...new Set(recentOutgoing.flatMap((message) =>
+      message.text.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu) || [],
+    ))];
+    const recentOutgoingEmojiMessages = recentOutgoing.filter((message) =>
+      /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(message.text),
+    ).length;
+    const observedEmojis = [...new Set([...recentOutgoingEmojis, ...(learnedContactEmoji ? [learnedContactEmoji] : [])])];
+    const addressForms = [...new Set(recentOutgoing.flatMap((message) =>
+      [...message.text.matchAll(/\b(?:ma|sir|madam|aunty|uncle)\b/gi)].map(([form]) => form),
+    ))];
     const professionalRelationship = /professor|teacher|lecturer|instructor|supervisor|manager|boss|client/i.test(
       layeredStyle.relationship || '',
     );
@@ -223,9 +223,13 @@ export class GemmaService {
     if (emojiPreference === 'none') {
       emojiGuidance = 'Emoji preference for this contact: none. Do not use emojis in any option, even if the contact uses them.';
     } else if (emojiPreference === 'frequent') {
-      emojiGuidance = `Emoji preference for this contact: frequent. Use only emojis the user has used naturally${uniqueMyEmojis.length ? ` (examples: ${uniqueMyEmojis.slice(0, 5).join(' ')})` : ''}; do not add one to every sentence or option.`;
-    } else if (outgoingEmojiMessages > 0 || learnedContactEmojiPreference) {
-      emojiGuidance = `Emoji preference for this contact: minimal. The user used emojis in ${outgoingEmojiMessages} of ${myPastMessages.length} recent outgoing messages${observedEmojis.length ? ` (observed: ${observedEmojis.slice(0, 5).join(' ')})` : ''}. At most one of the three options may contain one emoji, and only where it fits the user's examples.`;
+      emojiGuidance = `Emoji preference for this contact: frequent. Match the user's demonstrated emoji energy using only emojis they have used${observedEmojis.length ? ` (examples: ${observedEmojis.slice(0, 5).join(' ')})` : ''}. At least two options should naturally reflect it when the reply content fits; do not decorate every sentence.`;
+    } else if (recentOutgoingEmojiMessages > 0 || learnedContactEmojiPreference) {
+      const frequentlyUsesEmoji = recentOutgoingEmojiMessages >= Math.max(2, Math.ceil(recentOutgoing.length * 0.5));
+      const professionallyConsistent = recentOutgoingEmojiMessages >= Math.max(2, Math.ceil(recentOutgoing.length * 0.6)) || learnedContactEmojiPreference;
+      emojiGuidance = professionalRelationship && !professionallyConsistent
+        ? 'The user has not consistently used emojis with this professional contact; use no emojis.'
+        : `Emoji preference for this contact: minimal/adaptive. The user used emojis in ${recentOutgoingEmojiMessages} of their last ${recentOutgoing.length} outgoing messages${observedEmojis.length ? ` (examples: ${observedEmojis.slice(0, 5).join(' ')})` : ''}. ${frequentlyUsesEmoji ? 'At least two options should reflect that usage when the reply content fits.' : 'At least one option should reflect that usage when the reply content fits.'} Use only these demonstrated emojis, in the user's usual way; do not add emojis to every option.`;
     } else {
       emojiGuidance = 'Emoji preference for this contact: minimal. The user has not used emojis in the available outgoing messages; use no emojis unless explicitly requested.';
     }
@@ -238,6 +242,9 @@ export class GemmaService {
       recentOutgoing.length > 0
         ? `Recent examples of the user's own wording to this contact (style evidence only): ${JSON.stringify(recentOutgoing.map((message) => message.text.slice(0, 180)))}`
         : 'No outgoing examples are available. Use the contact-specific profile if present; otherwise choose a restrained, natural tone and do not assume intimacy.',
+      addressForms.length > 0
+        ? `Forms of address the user uses for this contact: ${JSON.stringify(addressForms)}. Preserve these naturally where appropriate; do not replace them with generic greetings or emojis.`
+        : '',
       isUserPrimarilyLowercase && !professionalRelationship && layeredStyle.contactFormality !== 'formal'
         ? 'The user tends to text casually in lowercase; match that relaxed style.'
         : '',
