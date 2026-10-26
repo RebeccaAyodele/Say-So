@@ -22,7 +22,6 @@ const corsOptions: CorsOptions = {
   },
   credentials: true,
   // Enumerate every method + header the extension actually uses so the
-  // browser's OPTIONS preflight gets a complete response BEFORE auth middleware.
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
   exposedHeaders: ['X-Request-Time'],

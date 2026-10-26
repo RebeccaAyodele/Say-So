@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { api } from '../../services/api-client';
 import type { UserPreferences } from '@sayso/shared';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { getAuthState, type AuthState } from '../../services/auth';
+import { AuthPanel } from '../../components/AuthPanel';
 
 const TONES = ['natural', 'casual', 'formal', 'concise'] as const;
 const LENGTHS = ['short', 'medium', 'detailed'] as const;
@@ -13,10 +15,15 @@ export function SettingsView() {
   const [prefs, setPrefs] = useState<UserPreferences | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [auth, setAuth] = useState<AuthState | null>(null);
 
   useEffect(() => {
-    api.getPreferences().then(setPrefs).catch(console.error);
+    getAuthState().then(setAuth).catch(() => setAuth({ isAuthenticated: false, userId: null, email: null, accessToken: null }));
   }, []);
+
+  useEffect(() => {
+    if (auth?.isAuthenticated) api.getPreferences().then(setPrefs).catch(console.error);
+  }, [auth?.isAuthenticated]);
 
   async function handleSave() {
     if (!prefs) return;
@@ -27,7 +34,7 @@ export function SettingsView() {
         defaultReplyLength: prefs.defaultReplyLength,
         learningMode: prefs.learningMode,
       });
-      setPrefs(updated);
+      setPrefs((current) => (current ? { ...current, ...updated } : current));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } finally {
@@ -48,11 +55,13 @@ export function SettingsView() {
         <h2 className="text-sm font-bold text-white">Settings</h2>
       </div>
 
-      {!prefs ? (
+      {auth && <AuthPanel auth={auth} onChange={(next) => { setAuth(next); if (!next.isAuthenticated) setPrefs(null); }} />}
+
+      {!auth || (auth.isAuthenticated && !prefs) ? (
         <div className="flex justify-center py-8">
           <Loader2 className="animate-spin text-brand-400" size={24} />
         </div>
-      ) : (
+      ) : auth.isAuthenticated && prefs ? (
         <>
           {/* Default Tone */}
           <div className="glass-panel rounded-xl p-4 border border-surface-border space-y-2.5">
@@ -63,7 +72,7 @@ export function SettingsView() {
               {TONES.map((t) => (
                 <button
                   key={t}
-                  onClick={() => setPrefs({ ...prefs, defaultTone: t })}
+                  onClick={() => setPrefs((current) => (current ? { ...current, defaultTone: t } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.defaultTone === t
                       ? 'bg-brand-500/15 border-brand-500/40 text-brand-300 font-semibold'
@@ -85,7 +94,7 @@ export function SettingsView() {
               {LENGTHS.map((l) => (
                 <button
                   key={l}
-                  onClick={() => setPrefs({ ...prefs, defaultReplyLength: l })}
+                  onClick={() => setPrefs((current) => (current ? { ...current, defaultReplyLength: l } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.defaultReplyLength === l
                       ? 'bg-brand-500/15 border-brand-500/40 text-brand-300 font-semibold'
@@ -107,7 +116,7 @@ export function SettingsView() {
               {LEARNING_MODES.map((m) => (
                 <button
                   key={m}
-                  onClick={() => setPrefs({ ...prefs, learningMode: m })}
+                  onClick={() => setPrefs((current) => (current ? { ...current, learningMode: m } : current))}
                   className={`text-xs py-2 rounded-lg border transition-all capitalize ${
                     prefs.learningMode === m
                       ? 'bg-brand-500/15 border-brand-500/40 text-brand-300 font-semibold'
@@ -141,7 +150,7 @@ export function SettingsView() {
             )}
           </button>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

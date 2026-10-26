@@ -8,6 +8,17 @@
   }
 }
 
+.auth-input {
+  color: #f9fafb !important;
+  caret-color: #6ee7b7;
+  -webkit-text-fill-color: #f9fafb;
+}
+
+.auth-input::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
 /* Custom Glassmorphism & UI Accents */
 .glass-panel {
   background: rgba(22, 27, 34, 0.75);

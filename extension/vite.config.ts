@@ -4,6 +4,9 @@ import { resolve } from 'path';
 import { copyFileSync, existsSync, mkdirSync } from 'fs';
 
 export default defineConfig({
+  // The workspace .env contains the VITE_SUPABASE_* client configuration.
+  // Vite otherwise searches relative to the extension package directory.
+  envDir: resolve(__dirname, '..'),
   plugins: [
     react(),
     {

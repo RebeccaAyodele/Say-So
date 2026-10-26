@@ -46,7 +46,7 @@ describe('Replies Route (/v1/replies)', () => {
 
     const res = await request(app)
       .post('/v1/replies/generate')
-      .set('Authorization', 'Bearer test_user_1')
+      .set('Authorization', 'Bearer test_user_generation')
       .send({
         contactRef: 'contact_123',
         context: {
@@ -62,6 +62,43 @@ describe('Replies Route (/v1/replies)', () => {
     expect(res.body.options[0].style).toBe('brief');
     expect(res.body.options[1].style).toBe('warm');
     expect(res.body.options[2].style).toBe('direct');
+    expect(res.headers['x-ratelimit-limit']).toBe('10');
+    expect(res.headers['x-ratelimit-remaining']).toBe('9');
+  });
+
+  it('limits repeated reply generation for the same authenticated user', async () => {
+    vi.spyOn(gemmaService, 'generateReplies').mockResolvedValue({
+      requestId: 'req_rate_limit',
+      options: [
+        { id: 'opt_1', style: 'brief', text: 'Sure.' },
+        { id: 'opt_2', style: 'warm', text: 'Absolutely.' },
+        { id: 'opt_3', style: 'direct', text: 'Will do.' },
+      ],
+      model: { provider: 'test', modelId: 'test' },
+    });
+
+    const body = {
+      contactRef: 'contact_rate_limit',
+      context: { messages: [{ role: 'them', text: 'Hello' }] },
+    };
+
+    for (let i = 0; i < 10; i += 1) {
+      const allowed = await request(app)
+        .post('/v1/replies/generate')
+        .set('Authorization', 'Bearer test_user_rate_limit')
+        .send(body);
+      expect(allowed.status).toBe(200);
+    }
+
+    const limited = await request(app)
+      .post('/v1/replies/generate')
+      .set('Authorization', 'Bearer test_user_rate_limit')
+      .send(body);
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.error.code).toBe('RATE_LIMITED');
+    expect(limited.headers['retry-after']).toMatch(/^[1-9]\d*$/);
+    expect(limited.headers['x-ratelimit-remaining']).toBe('0');
   });
 
   it('POST /v1/replies/feedback records draft card interactions', async () => {

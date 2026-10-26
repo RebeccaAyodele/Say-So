@@ -1,5 +1,7 @@
 import { Router, Response } from 'express';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
+import { createRateLimiter } from '../middleware/rate-limit.js';
+import { config } from '../config.js';
 import { gemmaService } from '../services/gemma-service.js';
 import { learningService } from '../services/learning-service.js';
 import { LearningEventModel } from '../db/models/index.js';
@@ -17,17 +19,24 @@ repliesRouter.use(requireAuth);
  * POST /v1/replies/generate
  * Generates three distinct, personalized reply suggestions using Gemma
  */
-repliesRouter.post('/generate', async (req: AuthenticatedRequest, res: Response, next) => {
-  try {
-    const userId = req.userId!;
-    const validatedData = GenerateRepliesRequestSchema.parse(req.body);
+repliesRouter.post(
+  '/generate',
+  createRateLimiter({
+    max: config.REPLY_RATE_LIMIT_MAX,
+    windowMs: config.REPLY_RATE_LIMIT_WINDOW_MS,
+  }),
+  async (req: AuthenticatedRequest, res: Response, next) => {
+    try {
+      const userId = req.userId!;
+      const validatedData = GenerateRepliesRequestSchema.parse(req.body);
 
-    const result = await gemmaService.generateReplies(userId, validatedData);
-    res.status(200).json(result);
-  } catch (err) {
-    next(err);
+      const result = await gemmaService.generateReplies(userId, validatedData);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 /**
  * POST /v1/replies/feedback

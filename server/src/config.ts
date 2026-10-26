@@ -21,6 +21,8 @@ const ConfigSchema = z.object({
   MONGODB_DB_NAME: z.string().default('sayso'),
   OPENROUTER_API_KEY: z.string().optional().default(''),
   GEMMA_MODEL_ID: z.string().default('google/gemma-3-12b-it'),
+  REPLY_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  REPLY_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(10 * 60 * 1000),
   SENTRY_DSN: z.string().optional().default(''),
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
 });
