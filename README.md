@@ -109,9 +109,7 @@ The Express backend is configured for deployment on **Render**:
 - High-performance Node runtime serving API endpoints with sub-100ms baseline latency.
 
 ### 4. Sentry Agent Tracing (Special Partner Category)
-Full-span pipeline observability using **Sentry Agent Tracing**:
-- Granular transaction spans tracing: `validate_request` -> `fetch_profile` -> `build_prompt` -> `gemma_inference` -> `validate_contract`.
-- **Strict Zero-PII Redaction**: Zero message bodies, drafts, or contact names are sent to Sentry. Only sanitized metrics (token count, inference latency, style distribution) are recorded.
+Pipeline timing spans cover `validate_request` -> `fetch_profile` -> `build_prompt` -> `gemma_inference` -> `validate_contract`. Sentry filters event payloads and spans to remove request data, URLs, user identity, and exception messages.
 
 ---
 
@@ -183,8 +181,10 @@ Detailed ablation studies and benchmarks are documented in [`.docs/EVALUATION_EX
 
 1. **Zero Auto-Send**: SaySo will **never** automatically send a message. The user always inspects, edits, and manually clicks Send in WhatsApp.
 2. **Metadata-First Candidate Detection**: Scanning the WhatsApp Web sidebar for unreplied conversations extracts only contact tags and unread counters—never message transcripts.
-3. **Explicit User Triggers**: Conversation transcripts are only transmitted when the user explicitly clicks *"Generate Smart Replies"*.
+3. **Transparent Draft Generation**: Recent message context from the open chat is sent to SaySo's backend and OpenRouter for draft generation. Opening a chat with a new incoming message can trigger generation automatically. SaySo never automatically sends a reply.
 4. **No Synthetic Feedback Loops**: The learning engine only updates profiles when the user *edits* a draft before sending, ensuring the AI never trains on its own raw output.
+
+See the [SaySo Privacy Policy](PRIVACY.md) for data storage, sharing, and deletion details.
 
 ---
 

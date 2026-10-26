@@ -158,7 +158,7 @@ function insertReplyText(text: string): boolean {
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastForwardedRef = '';
-let lastMessageCount = 0;
+let lastForwardedFingerprint = '';
 let expectedContactName: string | null = null;
 let previousContextFingerprint: string | null = null;
 let stableContextSamples = 0;
@@ -194,12 +194,13 @@ function forwardContext(): void {
   const contactRef = contactRefFrom(contactName);
   const isGroup = isActiveChatGroup(contactName);
 
-  if (contactRef === lastForwardedRef && messages.length === lastMessageCount) {
+  const fingerprint = getContextFingerprint();
+  if (contactRef === lastForwardedRef && fingerprint && fingerprint === lastForwardedFingerprint) {
     return;
   }
 
   lastForwardedRef = contactRef;
-  lastMessageCount = messages.length;
+  lastForwardedFingerprint = fingerprint ?? `${contactRef}:${messages.length}:${unreadCount}`;
 
   sendToBackground({
     type: 'CONVERSATION_CONTEXT',

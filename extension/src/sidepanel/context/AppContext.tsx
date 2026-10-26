@@ -182,8 +182,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Initial fetch of candidates
     refreshCandidates();
 
-    // Track last auto-generated contact to prevent duplicate calls for same conversation
-    let lastGeneratedRef = '';
+    // Track the last incoming message to avoid duplicate generation while allowing newer messages.
+    let lastGeneratedContextKey = '';
 
     // Listen for live updates forwarded via background
     const handler = (message: { type: string; payload?: unknown }) => {
@@ -208,8 +208,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Instant Auto-Predict / Auto-Summarize:
         const msgs = payload.messages;
         const lastMsg = msgs[msgs.length - 1];
-        if (lastMsg && lastMsg.role === 'them' && payload.contactRef !== lastGeneratedRef) {
-          lastGeneratedRef = payload.contactRef;
+        const contextKey = lastMsg
+          ? JSON.stringify([payload.contactRef, lastMsg.role, lastMsg.timestamp ?? '', lastMsg.text])
+          : '';
+        if (lastMsg && lastMsg.role === 'them' && contextKey !== lastGeneratedContextKey) {
+          lastGeneratedContextKey = contextKey;
           executeGenerate(payload.contactRef, payload.contactName, payload.isGroup, payload.unreadCount);
         }
       }
@@ -306,17 +309,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       (c) => (c.contactName || c.contactRef.replace('wa:', '')) === contactName
     );
 
-    generationRef.current++;
+    const generation = ++generationRef.current;
     activeContactRef.current = candidate?.contactRef ?? null;
     pendingContactSwitchRef.current = true;
 
     // Make the panel responsive while WhatsApp updates the DOM and emits the
     // authoritative context event (which starts the actual request).
     dispatch({ type: 'GENERATE_START' });
-    await sendToBackground({
-      type: 'OPEN_CHAT',
-      payload: { contactName },
-    }).catch(console.error);
+    try {
+      const result = await sendToBackground({
+        type: 'OPEN_CHAT',
+        payload: { contactName },
+      });
+      if (!result.success && generation === generationRef.current && pendingContactSwitchRef.current) {
+        pendingContactSwitchRef.current = false;
+        dispatch({ type: 'GENERATE_ERROR', payload: formatFriendlyError(result.error) });
+      }
+    } catch (err) {
+      if (generation === generationRef.current && pendingContactSwitchRef.current) {
+        pendingContactSwitchRef.current = false;
+        dispatch({ type: 'GENERATE_ERROR', payload: formatFriendlyError(err) });
+      }
+    }
 
     // Generation is triggered by the authoritative CONVERSATION_CONTEXT event
     // from WhatsApp. Starting another delayed request here caused duplicate

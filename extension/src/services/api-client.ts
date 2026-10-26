@@ -92,7 +92,7 @@ export function formatFriendlyError(error: unknown): string {
   const lower = msg.toLowerCase();
 
   if (lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('econnrefused')) {
-    return 'Cannot reach the SaySo backend. Make sure your server is running on port 3000.';
+    return 'Cannot reach the SaySo backend. Check your internet connection and try again.';
   }
   if (
     lower.includes('enotfound') ||
@@ -150,7 +150,7 @@ export const api = {
 
   updateContactProfile: (contactRef: string, body: UpdateContactProfileRequest) =>
     request<ContactProfile>(`/contacts/${encodeURIComponent(contactRef)}/profile`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(body),
     }),
 

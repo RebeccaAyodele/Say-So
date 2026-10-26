@@ -12,12 +12,53 @@ export function initSentry(): void {
       environment: config.NODE_ENV,
       tracesSampleRate: 1.0,
       beforeSend(event) {
-        // Redact any potential sensitive PII from exception frames or breadcrumbs
-        if (event.request?.headers) {
-          delete event.request.headers['authorization'];
-          delete event.request.headers['cookie'];
+        event.request = undefined;
+        event.user = undefined;
+        event.extra = undefined;
+        event.tags = undefined;
+        event.contexts = {};
+        event.breadcrumbs = [];
+        event.message = undefined;
+        event.transaction = undefined;
+        if (event.exception?.values) {
+          event.exception.values = event.exception.values.map((exception) => ({
+            ...exception,
+            value: exception.type || 'Error',
+          }));
         }
         return event;
+      },
+      beforeSendSpan(span) {
+        const safeSpanNames = new Set([
+          'validate_request',
+          'fetch_profile',
+          'build_prompt',
+          'gemma_inference',
+          'validate_contract',
+        ]);
+        const safeAttributeNames = new Set([
+          'sentry.origin',
+          'sentry.op',
+          'sentry.segment.name.source',
+          'status',
+          'duration_ms',
+          'error_type',
+          'messageCount',
+          'hasInstructions',
+          'hasCustomTone',
+          'modelId',
+          'provider',
+          'hasContactRef',
+          'contactFormality',
+          'signalCount',
+        ]);
+        return {
+          ...span,
+          name: safeSpanNames.has(span.name) ? span.name : 'operation',
+          attributes: Object.fromEntries(
+            Object.entries(span.attributes).filter(([key]) => safeAttributeNames.has(key)),
+          ),
+        };
       },
     });
     isSentryInitialized = true;
@@ -29,9 +70,9 @@ export function initSentry(): void {
 }
 
 /**
- * PII-Safe Agent Tracer
+ * Redacted Agent Tracer
  * Wraps generation pipeline steps into spans.
- * GUARANTEE: Never transmits raw messages, prompts, or user contact names to telemetry.
+ * Raw request data, URLs, user identity, and exception messages are removed before telemetry is sent.
  */
 export class AgentTracer {
   static async traceSpan<T>(
