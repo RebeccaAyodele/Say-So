@@ -22,7 +22,11 @@ interface SupabaseAuthResponse {
 }
 
 function supabaseError(body: SupabaseAuthResponse | null, fallback: string): string {
-  return body?.error_description || body?.msg || body?.error || fallback;
+  const message = body?.error_description || body?.msg || body?.error || fallback;
+  if (body?.error_code === 'over_email_send_rate_limit' || /email.*rate.?limit|rate.?limit.*email/i.test(message)) {
+    return 'Supabase has temporarily limited email delivery. With the default email service, this can take up to an hour. If your account was already created, switch to Sign in instead of requesting another confirmation email.';
+  }
+  return message;
 }
 
 export interface SignUpResult {

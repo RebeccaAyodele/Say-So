@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Loader2, LogIn, LogOut } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Eye, EyeOff, Loader2, LogIn, LogOut } from 'lucide-react';
 import { clearSession, signInWithPassword, signUpWithPassword, type AuthState } from '../services/auth';
 
 interface AuthPanelProps {
@@ -10,13 +10,17 @@ interface AuthPanelProps {
 export function AuthPanel({ auth, onChange }: AuthPanelProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const submitInFlight = useRef(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitInFlight.current) return;
+    submitInFlight.current = true;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -31,6 +35,7 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed.');
     } finally {
+      submitInFlight.current = false;
       setBusy(false);
     }
   }
@@ -62,11 +67,46 @@ export function AuthPanel({ auth, onChange }: AuthPanelProps) {
       </div>
       <label className="flex flex-col gap-1.5 text-[11px] font-semibold text-gray-300">
         Email address
-        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" className="auth-input min-h-11 rounded-lg border border-surface-border bg-surface-base px-3 text-sm leading-normal outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20" />
+        <input
+          id="sayso-email"
+          name="email"
+          required
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete={mode === 'signIn' ? 'username' : 'email'}
+          spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="auth-input min-h-11 w-full rounded-lg border border-surface-border bg-surface-base px-3 text-sm leading-normal outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20"
+        />
       </label>
       <label className="flex flex-col gap-1.5 text-[11px] font-semibold text-gray-300">
         Password
-        <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'} className="auth-input min-h-11 rounded-lg border border-surface-border bg-surface-base px-3 text-sm leading-normal outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20" />
+        <span className="relative block">
+          <input
+            id="sayso-password"
+            name="password"
+            required
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Your password"
+            autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+            className="auth-input min-h-11 w-full rounded-lg border border-surface-border bg-surface-base px-3 pr-11 text-sm leading-normal outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20"
+          />
+          <button
+            type="button"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            title={showPassword ? 'Hide password' : 'Show password'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => setShowPassword((visible) => !visible)}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 transition hover:text-gray-200 focus:outline-none focus-visible:text-brand-300"
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </span>
       </label>
       {error && <p className="text-xs text-red-300">{error}</p>}
       {notice && <p className="text-xs text-emerald-300">{notice}</p>}

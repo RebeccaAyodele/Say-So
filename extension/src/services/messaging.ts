@@ -25,7 +25,23 @@ export type MessageResponse =
 export function sendToBackground(
   message: ExtensionMessage,
 ): Promise<MessageResponse> {
-  return chrome.runtime.sendMessage(message);
+  try {
+    return chrome.runtime.sendMessage(message).catch((error: unknown) => {
+      if (isInvalidatedContext(error)) {
+        return { success: false, error: 'Extension was reloaded. Reload WhatsApp to reconnect SaySo.' };
+      }
+      throw error;
+    });
+  } catch (error) {
+    if (isInvalidatedContext(error)) {
+      return Promise.resolve({ success: false, error: 'Extension was reloaded. Reload WhatsApp to reconnect SaySo.' });
+    }
+    throw error;
+  }
+}
+
+function isInvalidatedContext(error: unknown): boolean {
+  return error instanceof Error && /extension context invalidated|receiving end does not exist/i.test(error.message);
 }
 
 /** Send a message from the service worker to the active WhatsApp tab's content script */

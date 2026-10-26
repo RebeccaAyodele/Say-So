@@ -15,8 +15,17 @@
 }
 
 .auth-input::placeholder {
-  color: #6b7280;
+  color: #9ca3af;
   opacity: 1;
+}
+
+/* Keep Chrome's selected autofill values readable in the dark extension UI. */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f9fafb;
+  -webkit-box-shadow: 0 0 0 1000px #0d1117 inset;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 /* Custom Glassmorphism & UI Accents */
